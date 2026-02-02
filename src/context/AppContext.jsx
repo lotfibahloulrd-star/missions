@@ -333,9 +333,20 @@ export const AppProvider = ({ children }) => {
         newMissions.forEach(m => saveToServer('save_mission', m));
 
         // Notifications
+        const destinations = (missionData.destinations || [missionData.destination]).join(', ');
+        const missionDetails = `
+DE : ${currentUser.name}
+OBJET : ${missionData.description || 'Mission professionnelle'}
+DESTINATION : ${destinations}
+PERIODE : Du ${missionData.dateStart} au ${missionData.dateEnd}
+
+Lien de validation : https://esclab-academy.com/missions/
+        `;
+
         notifyAdmins(
-            "Nouvelle demande de mission",
-            `L'utilisateur ${currentUser.name} a soumis une nouvelle demande de mission pour : ${(missionData.destinations || [missionData.destination]).join(', ')}.`
+            `Nouvelle mission : ${currentUser.name} - ${destinations}`,
+            missionDetails,
+            currentUser.department
         );
 
         // Smart Overlap Detection
