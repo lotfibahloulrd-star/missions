@@ -8,7 +8,7 @@ const AdminDashboard = () => {
     const { user, allMissions, usersDb, updateMissionStatus, addUser, updateUser, deleteUser, messagesDb, markMessageAsRead, deleteMessage, deleteMission, globalSettings } = useAppContext();
 
     // Form & UI States
-    const [userForm, setUserForm] = useState({ name: '', email: '', password: '', role: 'USER', region: 'Alger', phone: '' });
+    const [userForm, setUserForm] = useState({ name: '', email: '', password: '', role: 'USER', department: 'COMMERCIAL', region: 'Alger', phone: '' });
     const [previewingMission, setPreviewingMission] = useState(null);
     const [showUserForm, setShowUserForm] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
@@ -86,7 +86,7 @@ const AdminDashboard = () => {
     };
 
     const resetUserForm = () => {
-        setUserForm({ name: '', email: '', password: '', role: 'USER', region: 'Alger', phone: '' });
+        setUserForm({ name: '', email: '', password: '', role: 'USER', department: 'COMMERCIAL', region: 'Alger', phone: '' });
         setIsEditing(false);
         setEditingUserId(null);
         setShowUserForm(false);
@@ -377,6 +377,17 @@ const AdminDashboard = () => {
                                     <div className="col-md-2">
                                         <label className="form-label small fw-bold">Mot de Passe</label>
                                         <input type="text" className="form-control" required value={userForm.password} onChange={e => setUserForm({ ...userForm, password: e.target.value })} />
+                                    </div>
+                                    <div className="col-md-2">
+                                        <label className="form-label small fw-bold">Département</label>
+                                        <select className="form-select" value={userForm.department} onChange={e => setUserForm({ ...userForm, department: e.target.value })}>
+                                            <option value="COMMERCIAL">Commercial</option>
+                                            <option value="TECHNIQUE">Technique</option>
+                                            <option value="RH">Ressources Humaines</option>
+                                            <option value="DIRECTION">Direction</option>
+                                            <option value="LABORATOIRE">Laboratoire</option>
+                                            <option value="LOGISTIQUE">Logistique</option>
+                                        </select>
                                     </div>
                                     <div className="col-md-2">
                                         <label className="form-label small fw-bold">Région</label>
