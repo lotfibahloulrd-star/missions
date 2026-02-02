@@ -56,7 +56,7 @@ export const AppProvider = ({ children }) => {
             { id: 19, name: 'Larbi DAOUD', email: 'd.larbi@esclab-algerie.com', password: 'user123', role: 'USER', department: 'TECHNIQUE', region: 'Alger', phone: '' },
 
             // AUTRES
-            { id: 20, name: 'Lydia KERSANI', email: 'l.kersani@esclab-algerie.com', password: 'admin', role: 'USER', department: 'DIRECTION', region: 'National', phone: '' },
+            { id: 20, name: 'Lydia KERSANI', email: 'l.kersani@esclab-algerie.com', password: 'admin', role: 'ADMIN', department: 'DIRECTION', region: 'National', phone: '' },
             { id: 21, name: 'Hammou BERKAI', email: 'h.berkai@esclab-algerie.com', password: 'admin', role: 'USER', department: 'DIRECTION', region: 'National', phone: '' },
             { id: 22, name: 'Lynda BOUABDALLAH', email: 'l.bouabdallah@esclab-algerie.com', password: 'admin', role: 'USER', department: 'DIRECTION', region: 'National', phone: '' },
 
