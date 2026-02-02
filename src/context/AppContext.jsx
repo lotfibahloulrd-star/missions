@@ -37,7 +37,7 @@ export const AppProvider = ({ children }) => {
             { id: 5, name: 'Assia Adjlia', email: 'a.adjilia@esclab-algerie.com', password: 'user123', role: 'USER', department: 'COMMERCIAL', region: 'Alger', phone: '' },
             { id: 6, name: 'Naima Medjkoune', email: 'n.medjkoune@esclab-algerie.com', password: 'user123', role: 'USER', department: 'COMMERCIAL', region: 'Alger', phone: '' },
             { id: 7, name: 'Abderrahmane Cherbal', email: 'y.cherbal@esclab-algerie.com', password: 'user123', role: 'USER', department: 'COMMERCIAL', region: 'Alger', phone: '' },
-            { id: 8, name: 'Youcef Belkadi', email: 'y.belkadi@esclab-algerie.com', password: 'user123', role: 'USER', department: 'COMMERCIAL', region: 'Alger', phone: '' },
+            { id: 8, name: 'Youcef Belkadi', email: 'belkadi.youcef@esclab-algerie.com', password: 'user123', role: 'USER', department: 'COMMERCIAL', region: 'Alger', phone: '' },
             { id: 9, name: 'Mounir Khelfaoui', email: 'm.khelfaoui@esclab-algerie.com', password: 'user123', role: 'USER', department: 'COMMERCIAL', region: 'Alger', phone: '' },
             { id: 10, name: 'Ali Ait Azzouz', email: 'a.aitazzouz@esclab-algerie.com', password: 'user123', role: 'USER', department: 'COMMERCIAL', region: 'Alger', phone: '' },
             { id: 11, name: 'Nour el houda Belhamel', email: 'n.belhamel@esclab-algerie.com', password: 'user123', role: 'USER', department: 'COMMERCIAL', region: 'Alger', phone: '' },
