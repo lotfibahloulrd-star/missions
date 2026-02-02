@@ -234,6 +234,26 @@ export const AppProvider = ({ children }) => {
         localStorage.setItem('missiondz_messages', JSON.stringify(messagesDb));
     }, [messagesDb]);
 
+    const uploadFile = async (file, missionId) => {
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('missionId', missionId);
+
+            const apiUrl = `${import.meta.env.BASE_URL}data_api.php`;
+            const res = await fetch(apiUrl, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!res.ok) throw new Error('Network error');
+            return await res.json();
+        } catch (err) {
+            console.error("Error uploading file:", err);
+            return { success: false, error: err.message };
+        }
+    };
+
     // Actions
     const login = (email, password) => {
         const user = usersDb.find(u => u.email === email && u.password === password);
@@ -780,7 +800,8 @@ export const AppProvider = ({ children }) => {
             sendMessage,
             markMessageAsRead,
             deleteMessage,
-            resetDatabase
+            resetDatabase,
+            uploadFile
         }}>
             {children}
         </AppContext.Provider>

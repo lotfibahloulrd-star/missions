@@ -1,14 +1,16 @@
-import { X, Save, Car, Hotel } from 'lucide-react';
+import { X, Save, Car, Hotel, FileText, Paperclip } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import { generateMissionOrder } from '../utils/pdfGenerator';
+import { useState, useEffect } from 'react';
 
 const MissionReportModal = ({ mission, onClose, onSave }) => {
-    const { user, globalSettings, usersDb } = useAppContext();
+    const { user, globalSettings, usersDb, uploadFile } = useAppContext();
+    const [uploading, setUploading] = useState(false);
     const [formData, setFormData] = useState({
         // Transport
         transportEsclab: { depart: '', retour: '', km: '', carburant: '', immatriculation: '' },
         transportPerso: { depart: '', retour: '', km: '', carburant: '' },
-        transportTaxi: { depart: '', retour: '', km: '' }, // dates/times for taxi/avion usually implied by mission dates or specific entries
+        transportTaxi: { depart: '', retour: '', km: '' },
         transportAvion: { depart: '', retour: '' },
 
         // Expenses
@@ -16,7 +18,10 @@ const MissionReportModal = ({ mission, onClose, onSave }) => {
         repas: { frais: 0 },
         divers: { frais: 0 },
         avance: 0,
-        observation: ''
+        observation: '',
+
+        // Attachments
+        attachments: []
     });
 
     useEffect(() => {
@@ -37,6 +42,31 @@ const MissionReportModal = ({ mission, onClose, onSave }) => {
 
     const handleSimpleChange = (field, value) => {
         setFormData(prev => ({ ...prev, [field]: value }));
+    };
+
+    const handleFileUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        setUploading(true);
+        const result = await uploadFile(file, mission.id);
+        setUploading(false);
+
+        if (result.success) {
+            setFormData(prev => ({
+                ...prev,
+                attachments: [...(prev.attachments || []), { url: result.url, name: result.name }]
+            }));
+        } else {
+            alert("Erreur lors de l'upload: " + (result.error || "Inconnue"));
+        }
+    };
+
+    const removeAttachment = (index) => {
+        setFormData(prev => ({
+            ...prev,
+            attachments: prev.attachments.filter((_, i) => i !== index)
+        }));
     };
 
     const handleSubmit = (e) => {
@@ -124,9 +154,35 @@ const MissionReportModal = ({ mission, onClose, onSave }) => {
                             </div>
                         </div>
 
+                        {/* SECTION PIECES JOINTES */}
+                        <div className="mb-4">
+                            <h6 className="fw-bold text-primary border-bottom pb-2 mb-3 d-flex align-items-center gap-2"><FileText size={18} /> Pièces Jointes</h6>
+
+                            <div className="mb-3">
+                                <label className="form-label small fw-bold">Ajouter un justificatif (PDF, Image)</label>
+                                <div className="input-group">
+                                    <input type="file" className="form-control" onChange={handleFileUpload} disabled={uploading} accept="image/*,.pdf" />
+                                </div>
+                                {uploading && <div className="text-muted small mt-1">Téléversement en cours...</div>}
+                            </div>
+
+                            {formData.attachments && formData.attachments.length > 0 && (
+                                <div className="list-group">
+                                    {formData.attachments.map((file, idx) => (
+                                        <div key={idx} className="list-group-item d-flex justify-content-between align-items-center p-2">
+                                            <a href={`${import.meta.env.BASE_URL}${file.url}`} target="_blank" rel="noopener noreferrer" className="text-decoration-none text-dark small d-flex align-items-center gap-2">
+                                                <Paperclip size={14} /> {file.name}
+                                            </a>
+                                            <button type="button" className="btn btn-sm btn-outline-danger p-0 px-2" onClick={() => removeAttachment(idx)}>&times;</button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
                         <div className="d-flex justify-content-end gap-2 pt-3 border-top">
                             <button type="button" onClick={onClose} className="btn btn-light">Annuler</button>
-                            <button type="submit" className="btn btn-success d-flex align-items-center gap-2"><Save size={18} /> Enregistrer pour impression</button>
+                            <button type="submit" className="btn btn-success d-flex align-items-center gap-2"><Save size={18} /> Enregistrer le Rapport</button>
                         </div>
                     </form>
                 </div>
