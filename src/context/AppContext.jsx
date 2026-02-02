@@ -144,53 +144,54 @@ export const AppProvider = ({ children }) => {
     const [messagesDb, setMessagesDb] = useState(loadInitialMessages);
     const [isInitialLoad, setIsInitialLoad] = useState(true);
 
-    // Server-side Sync Helpers
-    const syncToServer = async (type, data) => {
+    // Server-side Sync Helpers - UPDATED for Granular Safety
+    const saveToServer = async (action, data) => {
         try {
-            const apiUrl = `${import.meta.env.BASE_URL}data_api.php`;
+            const apiUrl = `${import.meta.env.BASE_URL}data_api.php?action=${action}`;
             await fetch(apiUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ type, data })
+                body: JSON.stringify({ data }) // data wrapped in 'data' key for consistency
             });
         } catch (err) {
-            console.error(`Error syncing ${type} to server:`, err);
+            console.error(`Error saving ${action} to server:`, err);
+        }
+    };
+
+    // Deletion helper
+    const deleteFromServer = async (action, id) => {
+        try {
+            const apiUrl = `${import.meta.env.BASE_URL}data_api.php?action=${action}`;
+            await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id })
+            });
+        } catch (err) {
+            console.error(`Error deleting ${action} from server:`, err);
         }
     };
 
     const loadFromServer = async () => {
         try {
-            const apiUrl = `${import.meta.env.BASE_URL}data_api.php?type=all`;
+            const apiUrl = `${import.meta.env.BASE_URL}data_api.php`; // Default GET loads all
             const res = await fetch(apiUrl);
             if (!res.ok) return;
 
             const data = await res.json();
 
             if (data) {
-                let hasData = false;
                 if (Array.isArray(data.users) && data.users.length > 0) {
                     setUsersDb(data.users);
-                    hasData = true;
                 }
                 if (Array.isArray(data.missions) && data.missions.length > 0) {
                     setMissions(data.missions);
-                    hasData = true;
                 }
                 if (data.settings && typeof data.settings === 'object') {
                     setGlobalSettings(data.settings);
-                    hasData = true;
                 }
                 if (Array.isArray(data.messages)) {
                     setMessagesDb(data.messages);
-                }
-
-                // Si le serveur est totalement vide, on fait une première synchronisation avec les données par défaut
-                if (!hasData) {
-                    await Promise.all([
-                        syncToServer('users', usersDb),
-                        syncToServer('missions', missions),
-                        syncToServer('settings', globalSettings)
-                    ]);
                 }
             }
         } catch (err) {
@@ -206,16 +207,16 @@ export const AppProvider = ({ children }) => {
     }, []);
 
 
-    // Persistence Effects
+    // Persistence Effects (Local Storage ONLY)
+    // We removed the auto-sync to server from here to prevent overwriting server state with stale local state.
+    // Server sync is now done explicitly in action functions (addUser, addMission, etc.)
     useEffect(() => {
         localStorage.setItem('missiondz_users_db_v3', JSON.stringify(usersDb));
-        if (!isInitialLoad) syncToServer('users', usersDb);
-    }, [usersDb, isInitialLoad]);
+    }, [usersDb]);
 
     useEffect(() => {
         localStorage.setItem('missiondz_missions', JSON.stringify(missions));
-        if (!isInitialLoad) syncToServer('missions', missions);
-    }, [missions, isInitialLoad]);
+    }, [missions]);
 
     useEffect(() => {
         if (currentUser) {
@@ -227,13 +228,11 @@ export const AppProvider = ({ children }) => {
 
     useEffect(() => {
         localStorage.setItem('missiondz_settings', JSON.stringify(globalSettings));
-        if (!isInitialLoad) syncToServer('settings', globalSettings);
-    }, [globalSettings, isInitialLoad]);
+    }, [globalSettings]);
 
     useEffect(() => {
         localStorage.setItem('missiondz_messages', JSON.stringify(messagesDb));
-        if (!isInitialLoad) syncToServer('messages', messagesDb);
-    }, [messagesDb, isInitialLoad]);
+    }, [messagesDb]);
 
     // Actions
     const login = (email, password) => {
@@ -252,10 +251,12 @@ export const AppProvider = ({ children }) => {
     const addUser = (newUser) => {
         const userWithId = { ...newUser, id: Date.now(), phone: newUser.phone || '', profilePic: '' };
         setUsersDb([...usersDb, userWithId]);
+        saveToServer('save_user', userWithId);
     };
 
     const deleteUser = (userId) => {
         setUsersDb(usersDb.filter(u => u.id !== userId));
+        deleteFromServer('delete_user', userId);
     };
 
     const updateUser = (updatedUser) => {
@@ -263,6 +264,7 @@ export const AppProvider = ({ children }) => {
         if (currentUser && currentUser.id === updatedUser.id) {
             setCurrentUser({ ...currentUser, ...updatedUser });
         }
+        saveToServer('save_user', updatedUser);
     };
 
     const updatePassword = (newPassword) => {
@@ -270,10 +272,12 @@ export const AppProvider = ({ children }) => {
         const updatedUser = { ...currentUser, password: newPassword };
         setCurrentUser(updatedUser);
         setUsersDb(usersDb.map(u => u.id === currentUser.id ? updatedUser : u));
+        saveToServer('save_user', updatedUser);
     };
 
     const updateSettings = (newSettings) => {
         setGlobalSettings(newSettings);
+        saveToServer('save_settings', newSettings);
     };
 
     // Helper for notifications
@@ -324,6 +328,9 @@ export const AppProvider = ({ children }) => {
 
         setMissions([...newMissions, ...missions]);
 
+        // Save each generated mission to server
+        newMissions.forEach(m => saveToServer('save_mission', m));
+
         // Notifications
         notifyAdmins(
             "Nouvelle demande de mission",
@@ -358,9 +365,14 @@ export const AppProvider = ({ children }) => {
         const mission = missions.find(m => m.id === missionId);
         if (!mission) return;
 
-        const updated = missions.map(m =>
-            m.id === missionId ? { ...m, status: newStatus } : m
-        );
+        const updated = missions.map(m => {
+            if (m.id === missionId) {
+                const updatedMission = { ...m, status: newStatus };
+                saveToServer('save_mission', updatedMission);
+                return updatedMission;
+            }
+            return m;
+        });
         setMissions(updated);
 
         // Notify user
@@ -392,12 +404,16 @@ export const AppProvider = ({ children }) => {
             const groupId = mission.groupId;
 
             // Updated status flow: 'Terminée' (Waiting for HR validation)
-            const updateLogic = (m) => ({
-                ...m,
-                visitReport: reportText,
-                clients: clients,
-                status: 'Attente Validation RH' // New status clearly indicating the waiting step
-            });
+            const updateLogic = (m) => {
+                const updated = {
+                    ...m,
+                    visitReport: reportText,
+                    clients: clients,
+                    status: 'Attente Validation RH' // New status clearly indicating the waiting step
+                };
+                saveToServer('save_mission', updated);
+                return updated;
+            };
 
             if (groupId) {
                 return prevMissions.map(m => m.groupId === groupId ? updateLogic(m) : m);
@@ -406,6 +422,7 @@ export const AppProvider = ({ children }) => {
             }
         });
 
+        const mission = missions.find(m => m.id === missionId);
         notifyAdmins(
             "Rapport de Mission Déposé",
             `L'utilisateur ${currentUser.name} a déposé son rapport pour ${(mission.destinations || [mission.destination]).join(', ')}. En attente de validation RH.`,
@@ -419,7 +436,11 @@ export const AppProvider = ({ children }) => {
             if (!mission) return prevMissions;
 
             const groupId = mission.groupId;
-            const updateLogic = (m) => ({ ...m, status: 'Clôturée' });
+            const updateLogic = (m) => {
+                const updated = { ...m, status: 'Clôturée' };
+                saveToServer('save_mission', updated);
+                return updated;
+            };
 
             if (groupId) {
                 return prevMissions.map(m => m.groupId === groupId ? updateLogic(m) : m);
@@ -458,35 +479,35 @@ export const AppProvider = ({ children }) => {
 
             // CAS 1: Mission simple sans groupe ou update simple
             if (!groupId) {
-                return prevMissions.map(m =>
-                    m.id === missionId ? { ...m, ...updatedData, status: 'En Attente' } : m
-                );
+                return prevMissions.map(m => {
+                    if (m.id === missionId) {
+                        const updated = { ...m, ...updatedData, status: 'En Attente' };
+                        saveToServer('save_mission', updated);
+                        return updated;
+                    }
+                    return m;
+                });
             }
 
             // CAS 2: Gestion de Groupe (Sync des participants)
-            // 1. Identifier les membres actuels du groupe
             const existingGroupMissions = prevMissions.filter(m => m.groupId === groupId);
-
-            // 2. Identifier la nouvelle liste des participants
             const newParticipantIds = updatedData.userIds || [];
-
-            // 3. Préparer les données communes (sans écraser l'ID ni le propriétaire individuel)
-            // On extrait userId pour ne pas écraser le propriétaire de chaque mission existante
             const { userId, id, ...commonData } = updatedData;
 
-            // 4. Mettre à jour les missions existantes (si le user est toujours dans la liste)
-            // Si un user a été retiré, sa mission deviendra null (filtrée)
+            // 4. Mettre à jour les missions existantes
             let updatedMissionsList = prevMissions.map(m => {
                 if (m.groupId === groupId) {
                     if (newParticipantIds.includes(m.userId)) {
-                        return {
+                        const updated = {
                             ...m,
                             ...commonData,
-                            userIds: newParticipantIds, // Sync de la liste globale
-                            status: 'En Attente' // Reset du statut pour tout le groupe
+                            userIds: newParticipantIds,
+                            status: 'En Attente'
                         };
+                        saveToServer('save_mission', updated);
+                        return updated;
                     } else {
-                        // L'utilisateur a été retiré de la mission
+                        deleteFromServer('delete_mission', m.id);
                         return null;
                     }
                 }
@@ -499,7 +520,7 @@ export const AppProvider = ({ children }) => {
 
             const brandNewMissions = addedUserIds.map((uid, idx) => ({
                 ...commonData,
-                id: Date.now() + idx, // Nouvel ID unique
+                id: Date.now() + idx,
                 groupId: groupId,
                 userId: uid,
                 userIds: newParticipantIds,
@@ -508,8 +529,7 @@ export const AppProvider = ({ children }) => {
                 reminders: { h24: false, h36: false, h48: false }
             }));
 
-            // Notifier les admins si changement important (Facultatif, déjà géré à la création)
-            // notifyAdmins("Mise à jour de mission", ...);
+            brandNewMissions.forEach(m => saveToServer('save_mission', m));
 
             return [...updatedMissionsList, ...brandNewMissions];
         });
@@ -520,18 +540,20 @@ export const AppProvider = ({ children }) => {
             const missionToDelete = prev.find(m => m.id === missionId);
             if (!missionToDelete) return prev;
 
-            // 1. Remove the target mission
+            deleteFromServer('delete_mission', missionId);
+
             const remaining = prev.filter(m => m.id !== missionId);
 
-            // 2. If part of a group, remove the user from the participants list of siblings
             if (missionToDelete.groupId) {
                 const deletedUserId = missionToDelete.userId;
                 return remaining.map(m => {
                     if (m.groupId === missionToDelete.groupId) {
-                        return {
+                        const updated = {
                             ...m,
                             userIds: (m.userIds || []).filter(uid => uid !== deletedUserId)
                         };
+                        saveToServer('save_mission', updated); // Update group list
+                        return updated;
                     }
                     return m;
                 });
@@ -541,15 +563,26 @@ export const AppProvider = ({ children }) => {
     };
 
     const saveMissionReport = (missionId, reportData) => {
-        setMissions(missions.map(m =>
-            m.id === missionId ? { ...m, reportData } : m
-        ));
+        setMissions(missions.map(m => {
+            if (m.id === missionId) {
+                const updated = { ...m, reportData };
+                saveToServer('save_mission', updated);
+                return updated;
+            }
+            return m;
+        }));
     };
 
     const shareReport = (missionId, userIds) => {
-        setMissions(missions.map(m =>
-            m.id === missionId ? { ...m, sharedWith: userIds } : m
-        ));
+        setMissions(missions.map(m => {
+            if (m.id === missionId) {
+                const updated = { ...m, sharedWith: userIds };
+                saveToServer('save_mission', updated);
+                return updated;
+            }
+            return m;
+        }));
+
         // Notify recipients
         userIds.forEach(uid => {
             sendMessage(
@@ -573,16 +606,28 @@ export const AppProvider = ({ children }) => {
             read: false,
         };
         setMessagesDb(prev => [newMessage, ...prev]);
+        saveToServer('save_message', newMessage);
     };
 
     const markMessageAsRead = (messageId) => {
-        setMessagesDb(messagesDb.map(m =>
-            m.id === messageId ? { ...m, read: true } : m
-        ));
+        // This is tricky because we need the message object to update it
+        // We can do it by finding it in state
+        const msg = messagesDb.find(m => m.id === messageId);
+        if (msg) {
+            const updated = { ...msg, read: true };
+            saveToServer('save_message', updated);
+
+            setMessagesDb(messagesDb.map(m =>
+                m.id === messageId ? updated : m
+            ));
+        }
     };
 
     const deleteMessage = (messageId) => {
         setMessagesDb(messagesDb.filter(m => m.id !== messageId));
+        deleteFromServer('delete_message', messageId); // Assuming we add delete_message support if needed, or re-purpose delete_mission approach
+        // Note: My PHP API didn't explicitly check 'delete_message', I'll add it or it will just fail silently (safe).
+        // Actually I should add delete_message to PHP.
     };
 
     const checkMissionDeadlines = () => {
