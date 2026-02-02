@@ -1,4 +1,4 @@
-import { X, Save, Car, Hotel, FileText, Paperclip } from 'lucide-react';
+import { X, Save, Car, Hotel, File } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import { generateMissionOrder } from '../utils/pdfGenerator';
 import { useState, useEffect } from 'react';
@@ -156,7 +156,7 @@ const MissionReportModal = ({ mission, onClose, onSave }) => {
 
                         {/* SECTION PIECES JOINTES */}
                         <div className="mb-4">
-                            <h6 className="fw-bold text-primary border-bottom pb-2 mb-3 d-flex align-items-center gap-2"><FileText size={18} /> Pièces Jointes</h6>
+                            <h6 className="fw-bold text-primary border-bottom pb-2 mb-3 d-flex align-items-center gap-2"><File size={18} /> Pièces Jointes</h6>
 
                             <div className="mb-3">
                                 <label className="form-label small fw-bold">Ajouter un justificatif (PDF, Image)</label>
@@ -171,7 +171,7 @@ const MissionReportModal = ({ mission, onClose, onSave }) => {
                                     {formData.attachments.map((file, idx) => (
                                         <div key={idx} className="list-group-item d-flex justify-content-between align-items-center p-2">
                                             <a href={`${import.meta.env.BASE_URL}${file.url}`} target="_blank" rel="noopener noreferrer" className="text-decoration-none text-dark small d-flex align-items-center gap-2">
-                                                <Paperclip size={14} /> {file.name}
+                                                <File size={14} /> {file.name}
                                             </a>
                                             <button type="button" className="btn btn-sm btn-outline-danger p-0 px-2" onClick={() => removeAttachment(idx)}>&times;</button>
                                         </div>
