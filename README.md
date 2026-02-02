@@ -1,4 +1,8 @@
-# React + Vite
+# Missions
+
+This project is a mission management dashboard built with React + Vite.
+
+## React + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
