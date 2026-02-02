@@ -98,6 +98,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     exit;
 }
 
+// --- FILE UPLOAD Handler (Check FIRST before JSON parsing) ---
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['file'])) {
+    $uploadDir = __DIR__ . '/uploads/';
+    if (!file_exists($uploadDir)) mkdir($uploadDir, 0755, true);
+
+    $file = $_FILES['file'];
+    $missionId = $_POST['missionId'] ?? 'unknown';
+    $fileName = time() . '_' . basename($file['name']);
+    $targetPath = $uploadDir . $fileName;
+    
+    // Basic validation (images and pdf only)
+    $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf'];
+    if (!in_array($file['type'], $allowedTypes)) {
+        echo json_encode(['success' => false, 'error' => 'Type de fichier non autorisé (PDF ou Images seulement)']);
+        exit;
+    }
+
+    if (move_uploaded_file($file['tmp_name'], $targetPath)) {
+        // Return the relative URL
+        echo json_encode([
+            'success' => true, 
+            'url' => 'uploads/' . $fileName,
+            'name' => $file['name']
+        ]);
+    } else {
+        echo json_encode(['success' => false, 'error' => 'Upload failed']);
+    }
+    exit;
+}
+
 // --- POST Request: Actions ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $input = json_decode(file_get_contents('php://input'), true);
@@ -147,36 +177,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             echo json_encode(['success' => false, 'error' => 'Write failed']);
         }
-    }
-    exit;
-}
-
-// --- FILE UPLOAD Handler ---
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['file'])) {
-    $uploadDir = __DIR__ . '/uploads/';
-    if (!file_exists($uploadDir)) mkdir($uploadDir, 0755, true);
-
-    $file = $_FILES['file'];
-    $missionId = $_POST['missionId'] ?? 'unknown';
-    $fileName = time() . '_' . basename($file['name']);
-    $targetPath = $uploadDir . $fileName;
-    
-    // Basic validation (images and pdf only)
-    $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf'];
-    if (!in_array($file['type'], $allowedTypes)) {
-        echo json_encode(['success' => false, 'error' => 'Type de fichier non autorisé (PDF ou Images seulement)']);
-        exit;
-    }
-
-    if (move_uploaded_file($file['tmp_name'], $targetPath)) {
-        // Return the relative URL
-        echo json_encode([
-            'success' => true, 
-            'url' => 'uploads/' . $fileName,
-            'name' => $file['name']
-        ]);
-    } else {
-        echo json_encode(['success' => false, 'error' => 'Upload failed']);
     }
     exit;
 }
