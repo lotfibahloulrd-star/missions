@@ -1,0 +1,16 @@
+/* Reset minimal pour Bootstrap */
+body {
+  background-color: #f8f9fa;
+  /* Bootstrap bg-light */
+  min-height: 100vh;
+}
+
+/* Sidebar fix height */
+.sidebar {
+  min-height: 100vh;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.05);
+}
+
+.nav-link.active {
+  font-weight: bold;
+}
