@@ -2,6 +2,8 @@
 
 This project is a mission management dashboard built with React + Vite.
 
+> **Status**: Auto-deployment configured via GitHub Actions.
+
 ## React + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
