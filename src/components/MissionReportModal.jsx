@@ -23,7 +23,13 @@ const MissionReportModal = ({ mission, onClose, onSave }) => {
         if (mission.reportData) {
             setFormData(mission.reportData);
         }
-    }, [mission]);
+
+        const handleEsc = (e) => {
+            if (e.key === 'Escape') onClose();
+        };
+        window.addEventListener('keydown', handleEsc);
+        return () => window.removeEventListener('keydown', handleEsc);
+    }, [mission, onClose]);
 
     const handleChange = (section, field, value) => {
         setFormData(prev => ({
@@ -50,8 +56,16 @@ const MissionReportModal = ({ mission, onClose, onSave }) => {
     };
 
     return (
-        <div className="position-fixed top-0 start-0 w-100 h-100 bg-dark bg-opacity-50 d-flex justify-content-center align-items-center z-3" style={{ zIndex: 1050 }}>
-            <div className="card border-0 shadow-lg" style={{ width: '90%', maxWidth: '800px', maxHeight: '90vh', overflowY: 'auto' }}>
+        <div
+            className="position-fixed top-0 start-0 w-100 h-100 bg-dark bg-opacity-50 d-flex justify-content-center align-items-center z-3"
+            style={{ zIndex: 1050 }}
+            onClick={onClose}
+        >
+            <div
+                className="card border-0 shadow-lg"
+                style={{ width: '90%', maxWidth: '800px', maxHeight: '90vh', overflowY: 'auto' }}
+                onClick={(e) => e.stopPropagation()}
+            >
                 <div className="card-header bg-white py-3 d-flex justify-content-between align-items-center sticky-top">
                     <h5 className="mb-0 fw-bold">Rapport de Mission (Interne)</h5>
                     <button onClick={onClose} className="btn btn-sm btn-light rounded-circle p-2"><X size={20} /></button>

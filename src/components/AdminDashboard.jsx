@@ -174,7 +174,7 @@ const AdminDashboard = () => {
                                 <Archive className="me-2" size={20} />
                                 <span className="fw-bold small text-uppercase">Missions Clôturées</span>
                             </div>
-                            <h3 className="fw-bold mb-0">{relevantMissions.filter(m => m.status === 'Validée').length}</h3>
+                            <h3 className="fw-bold mb-0">{relevantMissions.filter(m => m.status === 'Clôturée').length}</h3>
                             <small className="text-white-50">Voir l'historique</small>
                         </div>
                     </div>
@@ -568,7 +568,7 @@ const AdminDashboard = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {relevantMissions.filter(m => m.status === 'Validée').map(mission => {
+                                {relevantMissions.filter(m => m.status === 'Clôturée').map(mission => {
                                     const ownerId = mission.userId || mission.userIds?.[0];
                                     const employee = usersDb.find(u => u.id === ownerId);
                                     const destinations = mission.destinations || [mission.destination];
@@ -621,7 +621,7 @@ const AdminDashboard = () => {
                                         </tr>
                                     );
                                 })}
-                                {relevantMissions.filter(m => m.status === 'Validée').length === 0 && (
+                                {relevantMissions.filter(m => m.status === 'Clôturée').length === 0 && (
                                     <tr>
                                         <td colSpan="5" className="text-center py-4 text-muted">
                                             Aucune mission clôturée pour le moment.

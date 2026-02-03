@@ -15,7 +15,13 @@ const VisitReportModal = ({ mission, onClose }) => {
         if (mission.clients && mission.clients.length > 0) {
             setClients(mission.clients);
         }
-    }, [mission]);
+
+        const handleEsc = (e) => {
+            if (e.key === 'Escape') onClose();
+        };
+        window.addEventListener('keydown', handleEsc);
+        return () => window.removeEventListener('keydown', handleEsc);
+    }, [mission, onClose]);
 
     const addClient = () => {
         setClients([...clients, { name: '', contact: '', region: '' }]);
@@ -49,6 +55,7 @@ const VisitReportModal = ({ mission, onClose }) => {
         if (!validate()) return;
         saveVisitReport(mission.id, reportText, clients);
         alert("Rapport enregistré avec succès !");
+        onClose(); // Fermer après enregistrement
     };
 
     const handlePrint = () => {
@@ -62,8 +69,16 @@ const VisitReportModal = ({ mission, onClose }) => {
     };
 
     return (
-        <div className="position-fixed top-0 start-0 w-100 h-100 bg-dark bg-opacity-50 d-flex justify-content-center align-items-center z-3" style={{ zIndex: 1050 }}>
-            <div className="card border-0 shadow-lg position-relative" style={{ width: '95%', maxWidth: '1000px', height: '90vh' }}>
+        <div
+            className="position-fixed top-0 start-0 w-100 h-100 bg-dark bg-opacity-50 d-flex justify-content-center align-items-center z-3"
+            style={{ zIndex: 1050 }}
+            onClick={onClose}
+        >
+            <div
+                className="card border-0 shadow-lg position-relative animate-fade-in"
+                style={{ width: '95%', maxWidth: '1000px', height: '90vh' }}
+                onClick={(e) => e.stopPropagation()}
+            >
                 <div className="card-header bg-white py-3 d-flex justify-content-between align-items-center">
                     <h5 className="mb-0 fw-bold d-flex align-items-center gap-2">
                         <FileText className="text-primary" /> Édition du Compte Rendu
@@ -131,11 +146,14 @@ const VisitReportModal = ({ mission, onClose }) => {
                     </div>
                 </div>
                 <div className="card-footer bg-white py-3 d-flex justify-content-end gap-2">
-                    <button onClick={handleSave} className="btn btn-light d-flex align-items-center gap-2 border">
-                        <Save size={18} /> Enregistrer
+                    <button onClick={onClose} className="btn btn-light d-flex align-items-center gap-2 border">
+                        <X size={18} /> Fermer sans enregistrer
+                    </button>
+                    <button onClick={handleSave} className="btn btn-success d-flex align-items-center gap-2 border text-white">
+                        <Save size={18} /> Enregistrer & Quitter
                     </button>
                     <button onClick={handlePrint} className="btn btn-primary d-flex align-items-center gap-2">
-                        <Download size={18} /> Valider & Imprimer PDF
+                        <Download size={18} /> Valider & Imprimer
                     </button>
                 </div>
             </div>
