@@ -98,7 +98,7 @@ const MissionPreviewModal = ({ mission, employee, participants, onValidate, onRe
                         {mission.status === 'En Attente' ? (
                             <>
                                 <button
-                                    onClick={() => { onValidate(mission.id); onClose(); }}
+                                    onClick={() => { onValidate(mission.id, 'Validée'); onClose(); }}
                                     className="btn btn-success flex-grow-1 d-flex align-items-center justify-content-center gap-2 py-2 fw-bold"
                                 >
                                     <CheckCircle size={18} /> Valider

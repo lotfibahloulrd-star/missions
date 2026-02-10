@@ -13,15 +13,48 @@ if (!file_exists($storageDir)) {
     @mkdir($storageDir, 0755, true);
 }
 
-// Helper to safely read/write JSON
+// Helper to log actions
+function logAction($action, $item = null) {
+    global $storageDir;
+    $logFile = $storageDir . 'actions_log.json';
+    $entry = [
+        'timestamp' => date('Y-m-d H:i:s'),
+        'user_ip' => $_SERVER['REMOTE_ADDR'],
+        'action' => $action,
+        'item_id' => $item['id'] ?? null,
+        'details' => $item
+    ];
+
+    $fp = fopen($logFile, 'c+');
+    if ($fp) {
+        if (flock($fp, LOCK_EX)) {
+            $size = filesize($logFile);
+            $content = $size > 0 ? fread($fp, $size) : '[]';
+            $logs = json_decode($content, true) ?: [];
+            $logs[] = $entry;
+            // Keep last 500 actions
+            if (count($logs) > 500) array_shift($logs);
+            ftruncate($fp, 0);
+            rewind($fp);
+            fwrite($fp, json_encode($logs, JSON_PRETTY_PRINT));
+            fflush($fp);
+            flock($fp, LOCK_UN);
+        }
+        fclose($fp);
+    }
+}
+
 function updateData($filename, $item, $idKey = 'id', $isDelete = false) {
     global $storageDir;
     $filepath = $storageDir . $filename;
-    
-    $fp = fopen($filepath, 'c+'); // Open for reading and writing
+
+    // Log the update
+    logAction($isDelete ? "delete_$filename" : "save_$filename", $item);
+
+    $fp = fopen($filepath, 'c+');
     if (!$fp) return false;
 
-    if (flock($fp, LOCK_EX)) { // Acquire exclusive lock
+    if (flock($fp, LOCK_EX)) {
         $size = filesize($filepath);
         $content = $size > 0 ? fread($fp, $size) : '[]';
         $data = json_decode($content, true);
@@ -30,154 +63,109 @@ function updateData($filename, $item, $idKey = 'id', $isDelete = false) {
         $found = false;
         $newItemId = $item[$idKey] ?? null;
 
-        // Process list
         $newData = [];
         if ($isDelete) {
             foreach ($data as $existing) {
-                if (isset($existing[$idKey]) && $existing[$idKey] == $newItemId) {
-                    continue; // Skip (delete)
-                }
+                if (isset($existing[$idKey]) && $existing[$idKey] == $newItemId) continue;
                 $newData[] = $existing;
             }
         } else {
-            foreach ($data as $k => $existing) {
+            foreach ($data as $existing) {
                 if (isset($existing[$idKey]) && $existing[$idKey] == $newItemId) {
-                    // Update existing
                     $newData[] = array_merge($existing, $item);
                     $found = true;
                 } else {
                     $newData[] = $existing;
                 }
             }
-            if (!$found) {
-                $newData[] = $item; // Add new
-            }
+            if (!$found) $newData[] = $item;
         }
 
         ftruncate($fp, 0);
         rewind($fp);
         fwrite($fp, json_encode($newData, JSON_PRETTY_PRINT));
         fflush($fp);
-        flock($fp, LOCK_UN); // Release lock
+        flock($fp, LOCK_UN);
     }
     fclose($fp);
     return true;
 }
 
-// Function specifically for overwrite (settings, or legacy full sync if needed)
-function overwriteData($filename, $fullData) {
-    global $storageDir;
-    $filepath = $storageDir . $filename;
-    file_put_contents($filepath, json_encode($fullData, JSON_PRETTY_PRINT));
-}
-
-// --- GET Request: Load All ---
+// ROUTING
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    $load = function($f) use ($storageDir) {
-        if (file_exists($storageDir . $f)) {
-            $c = file_get_contents($storageDir . $f);
-            return json_decode($c, true) ?: [];
-        }
-        return [];
-    };
-    
-    // Settings is an object, not array
-    $loadSettings = function($f) use ($storageDir) {
-        if (file_exists($storageDir . $f)) {
-            return json_decode(file_get_contents($storageDir . $f), true) ?: null;
-        }
-        return null;
-    };
-
-    echo json_encode([
-        'users' => $load('users.json'),
-        'missions' => $load('missions.json'),
-        'settings' => $loadSettings('settings.json'),
-        'messages' => $load('messages.json')
-    ]);
+    $response = [
+        'users' => json_decode(@file_get_contents($storageDir . 'users.json'), true) ?: [],
+        'missions' => json_decode(@file_get_contents($storageDir . 'missions.json'), true) ?: [],
+        'messages' => json_decode(@file_get_contents($storageDir . 'messages.json'), true) ?: [],
+        'settings' => json_decode(@file_get_contents($storageDir . 'settings.json'), true) ?: (object)[],
+        'expenses' => json_decode(@file_get_contents($storageDir . 'expenses.json'), true) ?: [],
+        'logs' => json_decode(@file_get_contents($storageDir . 'actions_log.json'), true) ?: []
+    ];
+    echo json_encode($response);
     exit;
-}
+} 
 
-// --- FILE UPLOAD Handler (Check FIRST before JSON parsing) ---
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['file'])) {
-    $uploadDir = __DIR__ . '/uploads/';
-    if (!file_exists($uploadDir)) mkdir($uploadDir, 0755, true);
-
-    $file = $_FILES['file'];
-    $missionId = $_POST['missionId'] ?? 'unknown';
-    $fileName = time() . '_' . basename($file['name']);
-    $targetPath = $uploadDir . $fileName;
-    
-    // Basic validation (images and pdf only)
-    $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf'];
-    if (!in_array($file['type'], $allowedTypes)) {
-        echo json_encode(['success' => false, 'error' => 'Type de fichier non autorisé (PDF ou Images seulement)']);
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_FILES['file'])) {
+        $uploadDir = __DIR__ . '/uploads/';
+        if (!file_exists($uploadDir)) @mkdir($uploadDir, 0755, true);
+        
+        $file = $_FILES['file'];
+        $fileName = time() . '_' . basename($file['name']);
+        $targetPath = $uploadDir . $fileName;
+        
+        if (move_uploaded_file($file['tmp_name'], $targetPath)) {
+            logAction('upload_file', ['filename' => $fileName]);
+            echo json_encode(['success' => true, 'url' => 'uploads/' . $fileName, 'name' => $file['name']]);
+        } else {
+            echo json_encode(['success' => false, 'error' => 'Upload failed']);
+        }
         exit;
     }
 
-    if (move_uploaded_file($file['tmp_name'], $targetPath)) {
-        // Return the relative URL
-        echo json_encode([
-            'success' => true, 
-            'url' => 'uploads/' . $fileName,
-            'name' => $file['name']
-        ]);
-    } else {
-        echo json_encode(['success' => false, 'error' => 'Upload failed']);
-    }
-    exit;
-}
-
-// --- POST Request: Actions ---
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $input = json_decode(file_get_contents('php://input'), true);
-    
-    // Legacy support or Specific Action
     $action = $_GET['action'] ?? $input['action'] ?? null;
-    $type = $input['type'] ?? null; // For legacy full sync
 
-    if ($action) {
-        // GRANULAR ACTIONS (Safe)
-        $success = false;
-        
-        if ($action === 'save_mission') {
-            $success = updateData('missions.json', $input['data'], 'id');
-        }
-        elseif ($action === 'delete_mission') {
-            $success = updateData('missions.json', ['id' => $input['id']], 'id', true);
-        }
-        elseif ($action === 'save_user') {
-            $success = updateData('users.json', $input['data'], 'id');
-        }
-        elseif ($action === 'delete_user') {
-            $success = updateData('users.json', ['id' => $input['id']], 'id', true);
-        }
-        elseif ($action === 'delete_message') {
-            $success = updateData('messages.json', ['id' => $input['id']], 'id', true);
-        }
-        elseif ($action === 'save_message') {
-            $success = updateData('messages.json', $input['data'], 'id');
-        }
-        elseif ($action === 'save_settings') {
-            // Settings is usually global object, safer to overwrite or merge
-            // Assuming settings is single object
-            $current = json_decode(file_get_contents($storageDir . 'settings.json') ?: '{}', true);
-            $new = array_merge($current, $input['data']);
-            file_put_contents($storageDir . 'settings.json', json_encode($new, JSON_PRETTY_PRINT));
-            $success = true;
-        }
-
-        echo json_encode(['success' => $success]);
-    } 
-    elseif ($type) {
-        // LEGACY FULL OVERWRITE (Fallback)
-        $filePath = $storageDir . $type . '.json';
-        if (file_put_contents($filePath, json_encode($input['data'], JSON_PRETTY_PRINT))) {
-            echo json_encode(['success' => true]);
-        } else {
-            echo json_encode(['success' => false, 'error' => 'Write failed']);
-        }
+    if (!$action) {
+        echo json_encode(['success' => false, 'error' => 'No action specified']);
+        exit;
     }
+
+    $success = false;
+    $data = $input['data'] ?? $input; // Support both structures
+
+    switch ($action) {
+        case 'save_mission':
+            $success = updateData('missions.json', $data);
+            break;
+        case 'delete_mission':
+            $success = updateData('missions.json', ['id' => $input['id'] ?? $data['id']], 'id', true);
+            break;
+        case 'save_user':
+            $success = updateData('users.json', $data);
+            break;
+        case 'delete_user':
+            $success = updateData('users.json', ['id' => $input['id'] ?? $data['id']], 'id', true);
+            break;
+        case 'save_message':
+            $success = updateData('messages.json', $data);
+            break;
+        case 'delete_message':
+            $success = updateData('messages.json', ['id' => $input['id'] ?? $data['id']], 'id', true);
+            break;
+        case 'save_settings':
+            $success = file_put_contents($storageDir . 'settings.json', json_encode($data, JSON_PRETTY_PRINT));
+            logAction('save_settings', $data);
+            break;
+        case 'save_expense':
+            $success = updateData('expenses.json', $data);
+            break;
+        case 'delete_expense':
+            $success = updateData('expenses.json', ['id' => $input['id'] ?? $data['id']], 'id', true);
+            break;
+    }
+
+    echo json_encode(['success' => (bool)$success]);
     exit;
 }
 ?>

@@ -36,8 +36,8 @@ export const AppProvider = ({ children }) => {
             // EQUIPE COMMERCIALE
             { id: 5, name: 'Assia Adjlia', email: 'a.adjilia@esclab-algerie.com', password: 'user123', role: 'USER', department: 'COMMERCIAL', region: 'Alger', phone: '' },
             { id: 6, name: 'Naima Medjkoune', email: 'n.medjkoune@esclab-algerie.com', password: 'user123', role: 'USER', department: 'COMMERCIAL', region: 'Alger', phone: '' },
-            { id: 7, name: 'Abderrahmane Cherbal', email: 'y.cherbal@esclab-algerie.com', password: 'user123', role: 'USER', department: 'COMMERCIAL', region: 'Alger', phone: '' },
-            { id: 8, name: 'Youcef Belkadi', email: 'belkadi.youcef@esclab-algerie.com', password: 'user123', role: 'USER', department: 'COMMERCIAL', region: 'Alger', phone: '' },
+            { id: 7, name: 'Abderrahmane Cherbal', email: 'a.cherbal@esclab-algerie.com', password: 'user123', role: 'USER', department: 'COMMERCIAL', region: 'Alger', phone: '' },
+            { id: 8, name: 'Youcef Belkadi', email: 'y.belkadi@esclab-algerie.com', password: 'user123', role: 'USER', department: 'COMMERCIAL', region: 'Alger', phone: '' },
             { id: 9, name: 'Mounir Khelfaoui', email: 'm.khelfaoui@esclab-algerie.com', password: 'user123', role: 'USER', department: 'COMMERCIAL', region: 'Alger', phone: '' },
             { id: 10, name: 'Ali Ait Azzouz', email: 'a.aitazzouz@esclab-algerie.com', password: 'user123', role: 'USER', department: 'COMMERCIAL', region: 'Alger', phone: '' },
             { id: 11, name: 'Nour el houda Belhamel', email: 'n.belhamel@esclab-algerie.com', password: 'user123', role: 'USER', department: 'COMMERCIAL', region: 'Alger', phone: '' },
@@ -143,6 +143,10 @@ export const AppProvider = ({ children }) => {
     const [missions, setMissions] = useState(loadInitialMissions);
     const [globalSettings, setGlobalSettings] = useState(loadInitialSettings);
     const [messagesDb, setMessagesDb] = useState(loadInitialMessages);
+    const [expenses, setExpenses] = useState(() => {
+        const saved = localStorage.getItem('missiondz_expenses');
+        return saved ? JSON.parse(saved) : [];
+    });
     const [isInitialLoad, setIsInitialLoad] = useState(true);
 
     // Server-side Sync Helpers - UPDATED for Granular Safety
@@ -194,17 +198,24 @@ export const AppProvider = ({ children }) => {
                 if (Array.isArray(data.messages)) {
                     setMessagesDb(data.messages);
                 }
+                if (Array.isArray(data.expenses)) {
+                    setExpenses(data.expenses);
+                }
             }
         } catch (err) {
-            console.error("Délai de réponse serveur ou erreur API - Utilisation mode local.");
+            console.error("Erreur de synchronisation avec le serveur.");
         } finally {
             setIsInitialLoad(false);
         }
     };
 
-    // Initial load from server
+    // Initial load + Auto-refresh polling
     useEffect(() => {
         loadFromServer();
+        const interval = setInterval(() => {
+            loadFromServer();
+        }, 30000); // 30 secondes
+        return () => clearInterval(interval);
     }, []);
 
 
@@ -234,6 +245,10 @@ export const AppProvider = ({ children }) => {
     useEffect(() => {
         localStorage.setItem('missiondz_messages', JSON.stringify(messagesDb));
     }, [messagesDb]);
+
+    useEffect(() => {
+        localStorage.setItem('missiondz_expenses', JSON.stringify(expenses));
+    }, [expenses]);
 
     // Actions
     const login = (email, password) => {
@@ -377,14 +392,23 @@ Lien de validation : https://esclab-academy.com/missions/
         const mission = missions.find(m => m.id === missionId);
         if (!mission) return;
 
+        const groupId = mission.groupId;
+
+        const updateLogic = (m) => {
+            const updatedMission = { ...m, status: newStatus };
+            saveToServer('save_mission', updatedMission);
+            return updatedMission;
+        };
+
         const updated = missions.map(m => {
-            if (m.id === missionId) {
-                const updatedMission = { ...m, status: newStatus };
-                saveToServer('save_mission', updatedMission);
-                return updatedMission;
+            if (groupId && m.groupId === groupId) {
+                return updateLogic(m);
+            } else if (m.id === missionId) {
+                return updateLogic(m);
             }
             return m;
         });
+
         setMissions(updated);
 
         // Notify user
@@ -642,6 +666,22 @@ Lien de validation : https://esclab-academy.com/missions/
         // Actually I should add delete_message to PHP.
     };
 
+    const addExpense = (newExp) => {
+        const expWithId = {
+            ...newExp,
+            id: Date.now(),
+            userId: currentUser?.id,
+            userName: currentUser?.name
+        };
+        setExpenses(prev => [...prev, expWithId]);
+        saveToServer('save_expense', expWithId);
+    };
+
+    const deleteExpense = (id) => {
+        setExpenses(prev => prev.filter(e => e.id !== id));
+        deleteFromServer('delete_expense', id);
+    };
+
     const checkMissionDeadlines = () => {
         const now = new Date();
         let missionsUpdate = [...missions];
@@ -769,6 +809,7 @@ Lien de validation : https://esclab-academy.com/missions/
     return (
         <AppContext.Provider value={{
             user: currentUser,
+            isInitialLoad,
             usersDb,
             missions: getVisibleMissions(),
             allMissions: missions,
@@ -792,6 +833,9 @@ Lien de validation : https://esclab-academy.com/missions/
             sendMessage,
             markMessageAsRead,
             deleteMessage,
+            expenses,
+            addExpense,
+            deleteExpense,
             resetDatabase
         }}>
             {children}

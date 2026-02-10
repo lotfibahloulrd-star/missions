@@ -14,15 +14,29 @@ import Settings from './components/Settings';
 import Login from './components/Login';
 
 function AppContent() {
-  const { user } = useAppContext();
+  const { user, isInitialLoad } = useAppContext();
   const navigate = useNavigate();
   const location = useLocation();
 
   React.useEffect(() => {
-    if (!user && location.pathname !== '/login') {
+    if (!isInitialLoad && !user && location.pathname !== '/login') {
       navigate('/login');
     }
-  }, [user, navigate, location]);
+  }, [user, isInitialLoad, navigate, location]);
+
+  if (isInitialLoad) {
+    return (
+      <div className="d-flex justify-content-center align-items-center vh-100 bg-light">
+        <div className="text-center">
+          <div className="spinner-border text-primary mb-3" role="status" style={{ width: '3rem', height: '3rem' }}>
+            <span className="visually-hidden">Chargement...</span>
+          </div>
+          <h5 className="fw-bold text-dark">MissionDz</h5>
+          <p className="text-muted small">Synchronisation des données en cours...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!user) {
     return (
