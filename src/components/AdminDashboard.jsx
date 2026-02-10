@@ -35,8 +35,8 @@ const AdminDashboard = () => {
     }, {});
 
     // BASIC STATS
-    const isSuperAdmin = user.role === 'SUPER_ADMIN';
-    const isBoss = user.role === 'SUPER_ADMIN'; // used for analytics tab
+    const isSuperAdmin = user.role === 'SUPER_ADMIN' || user.department === 'RH';
+    const isBoss = user.role === 'SUPER_ADMIN' || user.department === 'RH'; // used for analytics tab
     const isPrivileged = ['ADMIN', 'MANAGER'].includes(user.role); // limited view for admins/managers
     const relevantMissions = isSuperAdmin
         ? allMissions

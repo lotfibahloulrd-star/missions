@@ -5,7 +5,7 @@ import { Lock, Mail, AlertCircle, ChevronRight } from 'lucide-react';
 import '../styles/Login.css';
 
 const Login = () => {
-    const { login } = useAppContext();
+    const { login, resetDatabase } = useAppContext();
     const navigate = useNavigate();
 
     const [email, setEmail] = useState('');
@@ -34,9 +34,9 @@ const Login = () => {
             <div className="login-card">
                 <div className="login-header">
                     <div className="logos-container">
-                        <img src="/logo.jpg" alt="ESCLAB Logo" className="logo-item" />
+                        <img src="/missions/logo.jpg" alt="ESCLAB Logo" className="logo-item" />
                         <div style={{ width: '2px', height: '40px', background: '#e2e8f0' }}></div>
-                        <img src="/logo_ecc.png" alt="ECC Logo" className="logo-item" />
+                        <img src="/missions/logo_ecc.png" alt="ECC Logo" className="logo-item" />
                     </div>
                     <h1 className="login-title">MissionDz</h1>
                     <p className="login-subtitle">Plateforme de Gestion de Missions</p>
@@ -95,9 +95,22 @@ const Login = () => {
                     </button>
                 </form>
 
-                <p className="text-center mt-4 text-xs text-slate-400" style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
-                    © {new Date().getFullYear()} SARL ESCLAB & ECC. Tous droits réservés.
-                </p>
+                <div className="text-center mt-4">
+                    <button
+                        onClick={() => {
+                            if (window.confirm("Cela réinitialisera votre session locale. Utile en cas de plantage d'affichage.")) {
+                                resetDatabase();
+                            }
+                        }}
+                        className="btn btn-link text-decoration-none p-0"
+                        style={{ fontSize: '0.75rem', color: '#94a3b8' }}
+                    >
+                        Problème d'affichage ? Réinitialiser l'application
+                    </button>
+                    <p className="mt-2 text-xs text-slate-400" style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
+                        © {new Date().getFullYear()} SARL ESCLAB & ECC. Tous droits réservés.
+                    </p>
+                </div>
             </div>
         </div>
     );
