@@ -593,6 +593,13 @@ const AdminDashboard = () => {
                                             <td>
                                                 <div className="d-flex gap-2">
                                                     <button
+                                                        onClick={() => setPreviewingMission(mission)}
+                                                        className="btn btn-sm btn-outline-info"
+                                                        title="Aperçu rapide"
+                                                    >
+                                                        <Eye size={14} />
+                                                    </button>
+                                                    <button
                                                         onClick={() => {
                                                             const pNames = (mission.userIds || []).map(id => usersDb.find(u => u.id === id)?.name).filter(Boolean);
                                                             generateMissionOrder({ ...mission, participants: pNames }, employee || user, globalSettings);

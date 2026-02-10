@@ -92,6 +92,25 @@ const MissionPreviewModal = ({ mission, employee, participants, onValidate, onRe
                             <div className="h4 fw-bold text-primary mb-0">{mission.budget?.toLocaleString()} DA</div>
                             <small className="text-muted text-uppercase fw-bold" style={{ fontSize: '0.7rem' }}>Budget Estimé</small>
                         </div>
+
+                        {mission.visitReport && (
+                            <div className="col-12 mt-3 p-3 bg-success bg-opacity-10 border border-success border-opacity-25 rounded-3">
+                                <h6 className="text-success small text-uppercase fw-bold mb-3 d-flex align-items-center gap-2">
+                                    <FileText size={16} /> Compte Rendu de Visite
+                                </h6>
+                                <div className="mb-3">
+                                    <small className="text-muted d-block mb-1 fw-bold">Clients / Établissements :</small>
+                                    <div className="d-flex flex-wrap gap-1">
+                                        {(mission.clients || []).map((c, i) => (
+                                            <span key={i} className="badge bg-white text-dark border fw-normal">{c}</span>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div className="small text-dark" style={{ whiteSpace: 'pre-wrap' }}>
+                                    {mission.visitReport}
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     <div className="d-flex gap-2 mt-2">
