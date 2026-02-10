@@ -3,6 +3,8 @@ import { useAppContext } from '../context/AppContext';
 import { generateMissionOrder, generateVisitReportPDF } from '../utils/pdfGenerator';
 import { Users, ClipboardCheck, TrendingUp, AlertCircle, UserPlus, Trash2, Mail, CheckCircle, Edit, Save, X, FileText, Download, Archive, Printer, Eye } from 'lucide-react';
 import MissionPreviewModal from './MissionPreviewModal';
+import EmployeeMap from './EmployeeMap';
+import { Map as MapIcon, Navigation } from 'lucide-react';
 
 const AdminDashboard = () => {
     const { user, allMissions, usersDb, updateMissionStatus, addUser, updateUser, deleteUser, messagesDb, markMessageAsRead, deleteMessage, deleteMission, globalSettings } = useAppContext();
@@ -13,7 +15,7 @@ const AdminDashboard = () => {
     const [showUserForm, setShowUserForm] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [editingUserId, setEditingUserId] = useState(null);
-    const [activeTab, setActiveTab] = useState('missions'); // 'missions', 'messages', 'team', 'analytics', 'archive'
+    const [activeTab, setActiveTab] = useState('missions'); // 'missions', 'messages', 'team', 'analytics', 'archive', 'map'
 
     // Monthly Analytics Logic
     const now = new Date();
@@ -116,6 +118,12 @@ const AdminDashboard = () => {
                                 {unreadMessages}
                             </span>
                         )}
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('map')}
+                        className={`btn btn-outline-dark d-flex align-items-center gap-2 ${activeTab === 'map' ? 'active' : ''}`}
+                    >
+                        <MapIcon size={18} /> Carte
                     </button>
                     {isBoss && (
                         <button
@@ -777,6 +785,12 @@ const AdminDashboard = () => {
                     onReject={(id) => updateMissionStatus(id, 'Rejetée')}
                     onClose={() => setPreviewingMission(null)}
                 />
+            )}
+            {/* TAB: MAP / GEOGRAPHIC FOLLOW-UP */}
+            {activeTab === 'map' && (
+                <div className="animate-fade-in">
+                    <EmployeeMap employees={relevantUsers} missions={relevantMissions} />
+                </div>
             )}
         </div>
     );
