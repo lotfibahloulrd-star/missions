@@ -38,6 +38,8 @@ const AdminDashboard = () => {
 
     // BASIC STATS
     const isSuperAdmin = user.role === 'SUPER_ADMIN' || user.department === 'RH';
+    // Strictly restrict Map to Lotfi only as requested
+    const isLotfi = user?.email === 'l.bahloul@esclab-algerie.com' || user?.email === 'lotfi.bahloul@esclab-algerie.com' || user?.email === 'l.bahloul@esclab-academy.com';
     const isBoss = user.role === 'SUPER_ADMIN' || user.department === 'RH'; // used for analytics tab
     const isPrivileged = ['ADMIN', 'MANAGER'].includes(user.role); // limited view for admins/managers
     const relevantMissions = isSuperAdmin
@@ -119,7 +121,7 @@ const AdminDashboard = () => {
                             </span>
                         )}
                     </button>
-                    {isSuperAdmin && (
+                    {isLotfi && (
                         <button
                             onClick={() => setActiveTab('map')}
                             className={`btn btn-outline-dark d-flex align-items-center gap-2 ${activeTab === 'map' ? 'active' : ''}`}
