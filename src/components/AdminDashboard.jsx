@@ -119,12 +119,14 @@ const AdminDashboard = () => {
                             </span>
                         )}
                     </button>
-                    <button
-                        onClick={() => setActiveTab('map')}
-                        className={`btn btn-outline-dark d-flex align-items-center gap-2 ${activeTab === 'map' ? 'active' : ''}`}
-                    >
-                        <MapIcon size={18} /> Carte
-                    </button>
+                    {isSuperAdmin && (
+                        <button
+                            onClick={() => setActiveTab('map')}
+                            className={`btn btn-outline-dark d-flex align-items-center gap-2 ${activeTab === 'map' ? 'active' : ''}`}
+                        >
+                            <MapIcon size={18} /> Carte
+                        </button>
+                    )}
                     {isBoss && (
                         <button
                             onClick={() => setActiveTab('analytics')}
