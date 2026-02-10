@@ -110,6 +110,9 @@ const MissionList = ({ type = 'my' }) => {
                                         <div className="d-flex align-items-center gap-2 mb-1">
                                             <h5 className="mb-0 fw-bold">{destinations.join(' • ')}</h5>
                                             <span className={`badge ${mission.entity === 'ECC' ? 'bg-primary' : 'bg-dark'} ms-2`} style={{ fontSize: '0.65rem' }}>{mission.entity || 'ESCLAB'}</span>
+                                            <span className={`${getStatusBadge(mission.status)} ms-auto`} style={{ fontSize: '0.7rem' }}>
+                                                {mission.status || 'En Attente'}
+                                            </span>
                                         </div>
                                         <div className="d-flex align-items-center gap-3 text-muted small">
                                             <div className="d-flex align-items-center gap-1">

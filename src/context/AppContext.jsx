@@ -190,7 +190,12 @@ export const AppProvider = ({ children }) => {
                     setUsersDb(data.users);
                 }
                 if (Array.isArray(data.missions) && data.missions.length > 0) {
-                    setMissions(data.missions);
+                    // Nettoyage : s'assurer que chaque mission a un statut valide
+                    const sanitizedMissions = data.missions.map(m => ({
+                        ...m,
+                        status: m.status || 'En Attente'
+                    }));
+                    setMissions(sanitizedMissions);
                 }
                 if (data.settings && typeof data.settings === 'object') {
                     setGlobalSettings(data.settings);
@@ -780,30 +785,40 @@ Lien de validation : https://esclab-academy.com/missions/
         if (!currentUser) return [];
         const myId = currentUser.id;
 
-        if (['SUPER_ADMIN', 'LOGISTIQUE'].includes(currentUser.role)) {
-            return missions;
-        }
+        let filteredMissions = [];
 
-        // For ADMIN and MANAGER users, limit to missions belonging to their own department
-        if (['ADMIN', 'MANAGER'].includes(currentUser.role)) {
-            // Find missions where the owner (or any participant) belongs to the same department as the current user
-            // OR if the mission is shared with the current user
-            return missions.filter(m => {
+        if (['SUPER_ADMIN', 'LOGISTIQUE'].includes(currentUser.role)) {
+            filteredMissions = missions;
+        } else if (['ADMIN', 'MANAGER'].includes(currentUser.role)) {
+            filteredMissions = missions.filter(m => {
                 const isShared = m.sharedWith?.includes(myId);
                 if (isShared) return true;
-
                 const ownerId = m.userId || m.userIds?.[0];
                 const owner = usersDb.find(u => u.id === ownerId);
                 return owner && owner.department === currentUser.department;
             });
+        } else {
+            filteredMissions = missions.filter(m =>
+                m.userId === myId ||
+                m.userIds?.includes(myId) ||
+                m.sharedWith?.includes(myId)
+            );
         }
 
-        // Regular users: own missions, participating missions, or SHARED missions
-        return missions.filter(m =>
-            m.userId === myId ||
-            m.userIds?.includes(myId) ||
-            m.sharedWith?.includes(myId)
-        );
+        // Group by groupId to avoid double cards for the same group mission
+        const grouped = new Map();
+        [...filteredMissions].sort((a, b) => a.id - b.id).forEach(m => {
+            const key = m.groupId || m.id;
+            if (!grouped.has(key)) {
+                grouped.set(key, m);
+            } else {
+                if (m.userId === myId) {
+                    grouped.set(key, m);
+                }
+            }
+        });
+
+        return Array.from(grouped.values()).sort((a, b) => b.id - a.id);
     };
 
     return (
