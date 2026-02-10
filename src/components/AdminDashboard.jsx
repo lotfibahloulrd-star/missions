@@ -646,24 +646,56 @@ const AdminDashboard = () => {
                 <div className="animate-fade-in">
                     <div className="row g-4 mb-4">
                         <div className="col-md-6">
-                            <div className="card border-0 shadow-sm h-100">
-                                <div className="card-header bg-white py-3">
-                                    <h6 className="mb-0 fw-bold text-primary">Répartition par Département ({currentMonthLabel})</h6>
+                            <div className="card border-0 shadow-sm h-100 overflow-hidden">
+                                <div className="card-header bg-white py-3 border-0">
+                                    <h6 className="mb-0 fw-bold text-dark d-flex align-items-center gap-2">
+                                        <TrendingUp size={18} className="text-primary" />
+                                        Répartition par Département ({currentMonthLabel})
+                                    </h6>
                                 </div>
-                                <div className="card-body">
-                                    <div className="d-flex flex-column gap-3">
-                                        {Object.entries(missionsByDept).map(([dept, count]) => (
-                                            <div key={dept}>
-                                                <div className="d-flex justify-content-between mb-1 small fw-bold">
-                                                    <span>{dept}</span>
-                                                    <span>{count} missions</span>
+                                <div className="card-body p-4 pt-2">
+                                    <div className="d-flex flex-column gap-4 mt-2">
+                                        {Object.entries(missionsByDept).sort((a, b) => b[1] - a[1]).map(([dept, count], idx) => {
+                                            const colors = ['#0d6efd', '#6610f2', '#6f42c1', '#d63384', '#fd7e14', '#ffc107', '#198754', '#20c997', '#0dcaf0'];
+                                            const color = colors[idx % colors.length];
+                                            const percentage = (count / monthlyMissions.length) * 100;
+
+                                            return (
+                                                <div key={dept} className="group">
+                                                    <div className="d-flex justify-content-between align-items-end mb-2">
+                                                        <div>
+                                                            <span className="fw-bold d-block text-dark small" style={{ letterSpacing: '0.3px' }}>{dept}</span>
+                                                            <small className="text-muted" style={{ fontSize: '0.65rem' }}>{Math.round(percentage)}% de l'activité globale</small>
+                                                        </div>
+                                                        <div className="text-end">
+                                                            <span className="h5 fw-bold mb-0" style={{ color: color }}>{count}</span>
+                                                            <small className="text-muted ms-1 small">missions</small>
+                                                        </div>
+                                                    </div>
+                                                    <div className="progress overflow-visible" style={{ height: '10px', backgroundColor: '#f0f2f5', borderRadius: '20px' }}>
+                                                        <div
+                                                            className="progress-bar"
+                                                            style={{
+                                                                width: `${percentage}%`,
+                                                                backgroundColor: color,
+                                                                borderRadius: '20px',
+                                                                boxShadow: `0 4px 12px ${color}44`,
+                                                                transition: 'width 1s cubic-bezier(0.1, 0.5, 0.5, 1.0)'
+                                                            }}
+                                                        ></div>
+                                                    </div>
                                                 </div>
-                                                <div className="progress" style={{ height: '8px' }}>
-                                                    <div className="progress-bar" style={{ width: `${(count / monthlyMissions.length) * 100}%` }}></div>
+                                            );
+                                        })}
+                                        {Object.keys(missionsByDept).length === 0 && (
+                                            <div className="text-center py-5">
+                                                <div className="bg-light rounded-circle p-3 d-inline-block mb-3">
+                                                    <AlertCircle size={32} className="text-muted opacity-50" />
                                                 </div>
+                                                <p className="text-muted fw-medium py-0 mb-0">Aucune donnée pour ce mois-ci.</p>
+                                                <small className="text-muted small">Les statistiques apparaîtront après validation des premières missions.</small>
                                             </div>
-                                        ))}
-                                        {Object.keys(missionsByDept).length === 0 && <p className="text-center text-muted py-4">Aucune donnée ce mois-ci.</p>}
+                                        )}
                                     </div>
                                 </div>
                             </div>
