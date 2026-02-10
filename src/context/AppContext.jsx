@@ -211,6 +211,9 @@ export const AppProvider = ({ children }) => {
                     setExpenses(data.expenses);
                     localStorage.setItem('missiondz_expenses', JSON.stringify(data.expenses));
                 }
+
+                // Trigger background logic after loading data
+                checkMissionDeadlines();
             }
         } catch (err) {
             console.error("Erreur de synchronisation avec le serveur.");
@@ -353,7 +356,8 @@ export const AppProvider = ({ children }) => {
             userId: uId,
             status: 'En Attente',
             createdAt: new Date().toISOString().split('T')[0],
-            reminders: { h24: false, h36: false, h48: false }
+            createdAtTime: new Date().toISOString(),
+            reminders: { h1: false, h24: false, h36: false, h48: false }
         }));
 
         setMissions([...newMissions, ...missions]);
@@ -613,14 +617,23 @@ Lien de validation : https://esclab-academy.com/missions/
     };
 
     const saveMissionReport = (missionId, reportData) => {
-        setMissions(missions.map(m => {
-            if (m.id === missionId) {
+        setMissions(prevMissions => {
+            const mission = prevMissions.find(m => m.id === missionId);
+            if (!mission) return prevMissions;
+
+            const groupId = mission.groupId;
+            const updateLogic = (m) => {
                 const updated = { ...m, reportData };
                 saveToServer('save_mission', updated);
                 return updated;
+            };
+
+            if (groupId) {
+                return prevMissions.map(m => m.groupId === groupId ? updateLogic(m) : m);
+            } else {
+                return prevMissions.map(m => m.id === missionId ? updateLogic(m) : m);
             }
-            return m;
-        }));
+        });
     };
 
     const shareReport = (missionId, userIds) => {
@@ -703,57 +716,73 @@ Lien de validation : https://esclab-academy.com/missions/
         let hasUpdates = false;
 
         missionsUpdate = missionsUpdate.map(m => {
-            if (m.status !== 'Validée' || m.visitReport) return m;
-
-            const dateEnd = new Date(m.dateEnd);
-            dateEnd.setHours(23, 59, 59, 999);
-
-            const diffMs = now - dateEnd;
-            const diffHours = diffMs / (1000 * 60 * 60);
-
-            if (diffHours < 24) return m;
-
-            let reminders = m.reminders || { h24: false, h36: false, h48: false };
+            let reminders = m.reminders || { h1: false, h24: false, h36: false, h48: false };
             let changed = false;
 
-            if (diffHours >= 24 && !reminders.h24) {
-                newMessages.push({
-                    toUserId: m.userId,
-                    subject: "Rappel : Mission à clôturer",
-                    content: `Votre mission à ${m.destination} (fin le ${m.dateEnd}) n'est pas clôturée. Veuillez déposer votre compte rendu.`
-                });
-                reminders.h24 = true;
-                changed = true;
+            // 1. Rappel 60 minutes pour VALIDATION (Si En Attente)
+            if (m.status === 'En Attente' && m.createdAtTime) {
+                const createdDate = new Date(m.createdAtTime);
+                const diffMs = now - createdDate;
+                const diffMinutes = diffMs / (1000 * 60);
+
+                if (diffMinutes >= 60 && !reminders.h1) {
+                    const owner = usersDb.find(u => u.id === (m.userId || m.userIds?.[0]));
+                    notifyAdmins(
+                        "Rappel : Mission en attente de validation (+60 min)",
+                        `La mission de ${owner?.name || 'Collaborateur'} vers ${m.destination} créée le ${m.createdAt} est toujours en attente de validation.`,
+                        owner?.department
+                    );
+                    reminders.h1 = true;
+                    changed = true;
+                }
             }
 
-            if (diffHours >= 36 && !reminders.h36) {
-                const employee = usersDb.find(u => u.id === m.userId);
-                if (employee) {
-                    const admins = usersDb.filter(u => ['SUPER_ADMIN', 'ADMIN'].includes(u.role));
-                    admins.forEach(recipient => {
+            // 2. Rapports de fin de mission (Si Validée et pas de rapport)
+            if (m.status === 'Validée' && !m.visitReport) {
+                const dateEnd = new Date(m.dateEnd);
+                dateEnd.setHours(23, 59, 59, 999);
+                const diffMs = now - dateEnd;
+                const diffHours = diffMs / (1000 * 60 * 60);
+
+                if (diffHours >= 24 && !reminders.h24) {
+                    newMessages.push({
+                        toUserId: m.userId,
+                        subject: "Rappel : Mission à clôturer",
+                        content: `Votre mission à ${m.destination} (fin le ${m.dateEnd}) n'est pas clôturée. Veuillez déposer votre compte rendu.`
+                    });
+                    reminders.h24 = true;
+                    changed = true;
+                }
+
+                if (diffHours >= 36 && !reminders.h36) {
+                    const employee = usersDb.find(u => u.id === m.userId);
+                    if (employee) {
+                        const admins = usersDb.filter(u => ['SUPER_ADMIN', 'ADMIN'].includes(u.role));
+                        admins.forEach(recipient => {
+                            newMessages.push({
+                                toUserId: recipient.id,
+                                subject: "Escalade : Mission non clôturée",
+                                content: `Le collaborateur ${employee.name} n'a pas clôturé sa mission à ${m.destination} (fin le ${m.dateEnd}).`
+                            });
+                        });
+                    }
+                    reminders.h36 = true;
+                    changed = true;
+                }
+
+                if (diffHours >= 48 && !reminders.h48) {
+                    const superAdmins = usersDb.filter(u => u.role === 'SUPER_ADMIN');
+                    const employee = usersDb.find(u => u.id === m.userId);
+                    superAdmins.forEach(admin => {
                         newMessages.push({
-                            toUserId: recipient.id,
-                            subject: "Escalade : Mission non clôturée",
-                            content: `Le collaborateur ${employee.name} n'a pas clôturé sa mission à ${m.destination} (fin le ${m.dateEnd}).`
+                            toUserId: admin.id,
+                            subject: "ALERTE : Retard Clôture Mission",
+                            content: `ALERTE : La mission de ${employee?.name || 'Inconnu'} à ${m.destination} dépasse les 48h de retard de clôture.`
                         });
                     });
+                    reminders.h48 = true;
+                    changed = true;
                 }
-                reminders.h36 = true;
-                changed = true;
-            }
-
-            if (diffHours >= 48 && !reminders.h48) {
-                const superAdmins = usersDb.filter(u => u.role === 'SUPER_ADMIN');
-                const employee = usersDb.find(u => u.id === m.userId);
-                superAdmins.forEach(admin => {
-                    newMessages.push({
-                        toUserId: admin.id,
-                        subject: "ALERTE : Retard Clôture Mission",
-                        content: `ALERTE : La mission de ${employee?.name || 'Inconnu'} à ${m.destination} dépasse les 48h de retard de clôture.`
-                    });
-                });
-                reminders.h48 = true;
-                changed = true;
             }
 
             if (changed) {
@@ -765,6 +794,19 @@ Lien de validation : https://esclab-academy.com/missions/
 
         if (hasUpdates) {
             setMissions(missionsUpdate);
+            // On ne sauvegarde pas tout le paquet, on laisse les fonctions saveToServer faire leur boulot individuel si nécessaire,
+            // mais ici on a modifié des rappels, on devrait idéalement saveToServer chaque mission modifiée ou avoir une action massive.
+            // Pour l'instant on save chaque mission modifiée :
+            missionsUpdate.filter(m => hasUpdates).forEach(m => {
+                // On ne veut save que celles qui ont changé
+            });
+            // Correction : On ne save que les missions qui ont REELLEMENT changé dans ce tour
+            missions.forEach((oldM, idx) => {
+                if (JSON.stringify(oldM.reminders) !== JSON.stringify(missionsUpdate[idx].reminders)) {
+                    saveToServer('save_mission', missionsUpdate[idx]);
+                }
+            });
+
             const formattedMessages = newMessages.map(msg => ({
                 id: Date.now() + Math.random(),
                 fromUserId: 0,
@@ -775,7 +817,10 @@ Lien de validation : https://esclab-academy.com/missions/
                 date: new Date().toLocaleDateString('fr-FR') + ' ' + new Date().toLocaleTimeString('fr-FR'),
                 read: false,
             }));
-            setMessagesDb(prev => [...formattedMessages, ...prev]);
+            if (formattedMessages.length > 0) {
+                setMessagesDb(prev => [...formattedMessages, ...prev]);
+                formattedMessages.forEach(msg => saveToServer('save_message', msg));
+            }
         }
     };
 
