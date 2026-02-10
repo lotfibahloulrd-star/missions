@@ -179,32 +179,37 @@ export const AppProvider = ({ children }) => {
 
     const loadFromServer = async () => {
         try {
-            const apiUrl = `${import.meta.env.BASE_URL}data_api.php`; // Default GET loads all
+            const apiUrl = `${import.meta.env.BASE_URL}data_api.php?t=${Date.now()}`;
             const res = await fetch(apiUrl);
             if (!res.ok) return;
 
             const data = await res.json();
 
             if (data) {
+                // Forcer la synchronisation locale pour régler les problèmes Chrome/Cache
                 if (Array.isArray(data.users) && data.users.length > 0) {
                     setUsersDb(data.users);
+                    localStorage.setItem('missiondz_users_db_v3', JSON.stringify(data.users));
                 }
-                if (Array.isArray(data.missions) && data.missions.length > 0) {
-                    // Nettoyage : s'assurer que chaque mission a un statut valide
+                if (Array.isArray(data.missions)) {
                     const sanitizedMissions = data.missions.map(m => ({
                         ...m,
                         status: m.status || 'En Attente'
                     }));
                     setMissions(sanitizedMissions);
+                    localStorage.setItem('missiondz_missions', JSON.stringify(sanitizedMissions));
                 }
                 if (data.settings && typeof data.settings === 'object') {
                     setGlobalSettings(data.settings);
+                    localStorage.setItem('missiondz_settings', JSON.stringify(data.settings));
                 }
                 if (Array.isArray(data.messages)) {
                     setMessagesDb(data.messages);
+                    localStorage.setItem('missiondz_messages', JSON.stringify(data.messages));
                 }
                 if (Array.isArray(data.expenses)) {
                     setExpenses(data.expenses);
+                    localStorage.setItem('missiondz_expenses', JSON.stringify(data.expenses));
                 }
             }
         } catch (err) {
@@ -320,6 +325,10 @@ export const AppProvider = ({ children }) => {
     const notifyAdmins = (subject, content, relatedDept = null) => {
         const recipients = usersDb.filter(u => {
             if (['SUPER_ADMIN', 'LOGISTIQUE'].includes(u.role)) return true;
+
+            // RH department (DRH) always notified for validation tasks
+            if (u.department === 'RH') return true;
+
             if (['ADMIN', 'MANAGER'].includes(u.role)) {
                 return relatedDept && u.department === relatedDept;
             }
@@ -793,6 +802,10 @@ Lien de validation : https://esclab-academy.com/missions/
             filteredMissions = missions.filter(m => {
                 const isShared = m.sharedWith?.includes(myId);
                 if (isShared) return true;
+
+                // DRH (RH Dept) special visibility: Can see all missions awaiting validation or closed
+                if (currentUser.department === 'RH' && ['Attente Validation RH', 'Clôturée', 'Validée'].includes(m.status)) return true;
+
                 const ownerId = m.userId || m.userIds?.[0];
                 const owner = usersDb.find(u => u.id === ownerId);
                 return owner && owner.department === currentUser.department;
