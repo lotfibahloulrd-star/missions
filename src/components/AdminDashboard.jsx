@@ -7,7 +7,7 @@ import EmployeeMap from './EmployeeMap';
 import { Map as MapIcon, Navigation } from 'lucide-react';
 
 const AdminDashboard = () => {
-    const { user, allMissions, usersDb, updateMissionStatus, addUser, updateUser, deleteUser, messagesDb, markMessageAsRead, deleteMessage, deleteMission, globalSettings } = useAppContext();
+    const { user, allMissions, usersDb, updateMissionStatus, validateMissionFinal, addUser, updateUser, deleteUser, messagesDb, markMessageAsRead, deleteMessage, deleteMission, globalSettings } = useAppContext();
 
     // Form & UI States
     const [userForm, setUserForm] = useState({ name: '', email: '', password: '', role: 'USER', department: 'COMMERCIAL', region: 'Alger', phone: '' });
@@ -265,6 +265,24 @@ const AdminDashboard = () => {
                                                     >
                                                         <Eye size={14} />
                                                     </button>
+
+                                                    {mission.status === 'Attente Validation RH' && ([3, 45].includes(user.id) || user.role === 'SUPER_ADMIN') && (
+                                                        <button
+                                                            onClick={() => {
+                                                                if (mission.visitReport && mission.reportData) {
+                                                                    if (window.confirm("Confirmer la validation finale et la clôture de ce dossier ?")) {
+                                                                        validateMissionFinal(mission.id);
+                                                                    }
+                                                                } else {
+                                                                    alert("Le dossier est incomplet (Manque Rapport ou Note de Frais).");
+                                                                }
+                                                            }}
+                                                            className={`btn btn-sm ${mission.visitReport && mission.reportData ? 'btn-danger text-white' : 'btn-secondary'} d-flex align-items-center gap-1`}
+                                                            title="Valider Clôture RH"
+                                                        >
+                                                            <CheckCircle size={14} /> Clôturer
+                                                        </button>
+                                                    )}
 
                                                     {mission.status === 'En Attente' && (
                                                         <>
@@ -789,6 +807,8 @@ const AdminDashboard = () => {
                         .map(id => usersDb.find(u => u.id === id))
                         .filter(Boolean)}
                     onValidate={updateMissionStatus}
+                    onFinalValidate={validateMissionFinal}
+                    canFinalValidate={[3, 45].includes(user.id) || user.role === 'SUPER_ADMIN'}
                     onReject={(id) => updateMissionStatus(id, 'Rejetée')}
                     onClose={() => setPreviewingMission(null)}
                 />

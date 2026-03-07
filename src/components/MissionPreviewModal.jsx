@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { X, Calendar, MapPin, Users, Building, Info, CheckCircle, XCircle, User } from 'lucide-react';
 
-const MissionPreviewModal = ({ mission, employee, participants, onValidate, onReject, onClose }) => {
+const MissionPreviewModal = ({ mission, employee, participants, onValidate, onFinalValidate, canFinalValidate, onReject, onClose }) => {
     useEffect(() => {
         const handleEsc = (e) => {
             if (e.key === 'Escape') onClose();
@@ -129,6 +129,22 @@ const MissionPreviewModal = ({ mission, employee, participants, onValidate, onRe
                                     <XCircle size={18} /> Rejeter
                                 </button>
                             </>
+                        ) : mission.status === 'Attente Validation RH' && canFinalValidate ? (
+                            <button
+                                onClick={() => {
+                                    if (mission.visitReport && mission.reportData) {
+                                        if (window.confirm("Confirmer la validation finale et la clôture de ce dossier ?")) {
+                                            onFinalValidate(mission.id);
+                                            onClose();
+                                        }
+                                    } else {
+                                        alert("Le dossier est incomplet (Manque Rapport ou Note de Frais).");
+                                    }
+                                }}
+                                className={`btn ${mission.visitReport && mission.reportData ? 'btn-danger' : 'btn-secondary'} flex-grow-1 d-flex align-items-center justify-content-center gap-2 py-2 fw-bold`}
+                            >
+                                <CheckCircle size={18} /> Clôturer la Mission
+                            </button>
                         ) : (
                             <button onClick={onClose} className="btn btn-light border w-100 py-2 fw-bold">Fermer</button>
                         )}
