@@ -70,6 +70,9 @@ const LogistiqueView = () => {
                 return scopeMissions.filter(m => m.status === 'Clôturée' || m.status === 'Terminée');
             case 'search':
                 return (user?.role === 'LOGISTIQUE' || user?.name === 'Mohamed OUALI') ? scopeMissions.filter(m => (m.dateStart <= customEnd && m.dateEnd >= customStart)) : [];
+            case 'all':
+                // Return every mission, regardless of status
+                return scopeMissions;
             default: return ongoingMissions;
         }
     };
@@ -125,6 +128,16 @@ const LogistiqueView = () => {
                                 <CheckCircle2 size={18} />
                                 <span className="d-none d-md-inline">Missions clôturées</span>
                                 <span className="badge bg-white text-primary ms-1">{closedMissions.length}</span>
+                            </button>
+                        </li>
+                        <li className="nav-item">
+                            <button
+                                className={`nav-link d-flex align-items-center justify-content-center gap-2 py-2 ${activeTab === 'all' ? 'active shadow-sm' : 'text-dark'}`}
+                                onClick={() => setActiveTab('all')}
+                            >
+                                <Calendar size={18} />
+                                <span className="d-none d-md-inline">Historique</span>
+                                <span className="badge bg-white text-primary ms-1">{scopeMissions.length}</span>
                             </button>
                         </li>
                         {(user?.role === 'LOGISTIQUE' || user?.name === 'Mohamed OUALI') && (
