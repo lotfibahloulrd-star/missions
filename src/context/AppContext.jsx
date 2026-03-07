@@ -7,7 +7,7 @@ export const AppProvider = ({ children }) => {
     // Initial Data Parsers - SECURED with try/catch
     const loadInitialUsers = () => {
         try {
-            const saved = localStorage.getItem('missiondz_users_db_v3');
+            const saved = localStorage.getItem('missiondz_users_db_v4');
             if (saved) {
                 const parsed = JSON.parse(saved);
                 if (parsed.length > 0 && parsed[0].department) {
@@ -189,7 +189,7 @@ export const AppProvider = ({ children }) => {
                 // Forcer la synchronisation locale pour régler les problèmes Chrome/Cache
                 if (Array.isArray(data.users) && data.users.length > 0) {
                     setUsersDb(data.users);
-                    localStorage.setItem('missiondz_users_db_v3', JSON.stringify(data.users));
+                    localStorage.setItem('missiondz_users_db_v4', JSON.stringify(data.users));
                 }
                 if (Array.isArray(data.missions)) {
                     const sanitizedMissions = data.missions.map(m => ({
@@ -236,7 +236,7 @@ export const AppProvider = ({ children }) => {
     // We removed the auto-sync to server from here to prevent overwriting server state with stale local state.
     // Server sync is now done explicitly in action functions (addUser, addMission, etc.)
     useEffect(() => {
-        localStorage.setItem('missiondz_users_db_v3', JSON.stringify(usersDb));
+        localStorage.setItem('missiondz_users_db_v4', JSON.stringify(usersDb));
     }, [usersDb]);
 
     useEffect(() => {
