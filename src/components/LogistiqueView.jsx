@@ -6,6 +6,11 @@ const LogistiqueView = () => {
     const { allMissions, usersDb, user } = useAppContext();
     const [activeTab, setActiveTab] = useState('ongoing');
 
+    // Custom date range state
+    const today = new Date().toISOString().split('T')[0];
+    const [customStart, setCustomStart] = useState(today);
+    const [customEnd, setCustomEnd] = useState(today);
+
     // Date calculations for "Saturday to Thursday"
     const getWeekBounds = () => {
         const now = new Date();
@@ -60,7 +65,11 @@ const LogistiqueView = () => {
         switch (activeTab) {
             case 'ongoing': return ongoingMissions;
             case 'upcoming': return upcomingMissions;
-            case 'closed': return closedMissions;
+            case 'closed':
+                // Fix status filter and add date fallback
+                return scopeMissions.filter(m => m.status === 'Clôturée' || m.status === 'Terminée');
+            case 'search':
+                return scopeMissions.filter(m => (m.dateStart <= customEnd && m.dateEnd >= customStart));
             default: return ongoingMissions;
         }
     };
@@ -118,9 +127,51 @@ const LogistiqueView = () => {
                                 <span className="badge bg-white text-primary ms-1">{closedMissions.length}</span>
                             </button>
                         </li>
+                        <li className="nav-item">
+                            <button
+                                className={`nav-link d-flex align-items-center justify-content-center gap-2 py-2 ${activeTab === 'search' ? 'active shadow-sm' : 'text-dark'}`}
+                                onClick={() => setActiveTab('search')}
+                            >
+                                <Filter size={18} />
+                                <span className="d-none d-md-inline">Recherche par Date</span>
+                            </button>
+                        </li>
                     </ul>
                 </div>
             </div>
+
+            {/* Date Search Controls */}
+            {activeTab === 'search' && (
+                <div className="card border-0 shadow-sm mb-4 bg-light">
+                    <div className="card-body">
+                        <div className="row g-3 align-items-end">
+                            <div className="col-md-4">
+                                <label className="form-label small fw-bold">Date de début</label>
+                                <input
+                                    type="date"
+                                    className="form-control"
+                                    value={customStart}
+                                    onChange={(e) => setCustomStart(e.target.value)}
+                                />
+                            </div>
+                            <div className="col-md-4">
+                                <label className="form-label small fw-bold">Date de fin</label>
+                                <input
+                                    type="date"
+                                    className="form-control"
+                                    value={customEnd}
+                                    onChange={(e) => setCustomEnd(e.target.value)}
+                                />
+                            </div>
+                            <div className="col-md-4">
+                                <div className="p-2 bg-white rounded border small text-muted">
+                                    Affiche toutes les missions (Validées, Archivées ou En Attente) chevauchant cette période.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Main Content Table */}
             <div className="card border-0 shadow-sm overflow-hidden">
