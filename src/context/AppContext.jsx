@@ -188,8 +188,20 @@ export const AppProvider = ({ children }) => {
             if (data) {
                 // Forcer la synchronisation locale pour régler les problèmes Chrome/Cache
                 if (Array.isArray(data.users) && data.users.length > 0) {
-                    setUsersDb(data.users);
-                    localStorage.setItem('missiondz_users_db_v4', JSON.stringify(data.users));
+                    // Vérifier si Fatiha est présente, sinon l'ajouter (migration forcée)
+                    const fatihaId = 45;
+                    const hasFatiha = data.users.some(u => u.id === fatihaId);
+                    let finalUsers = data.users;
+
+                    if (!hasFatiha) {
+                        const fatihaAccount = { id: 45, name: 'Fatiha BOURCHOUCH', email: 'f.bourchouch@esclab-algerie.com', password: 'user123', role: 'ADMIN', department: 'RH', region: 'National', phone: '' };
+                        finalUsers = [...data.users, fatihaAccount];
+                        // On la sauvegarde aussi sur le serveur pour les prochains chargements
+                        saveToServer('save_user', fatihaAccount);
+                    }
+
+                    setUsersDb(finalUsers);
+                    localStorage.setItem('missiondz_users_db_v4', JSON.stringify(finalUsers));
                 }
                 if (Array.isArray(data.missions)) {
                     const sanitizedMissions = data.missions.map(m => ({
