@@ -69,7 +69,7 @@ const LogistiqueView = () => {
                 // Fix status filter and add date fallback
                 return scopeMissions.filter(m => m.status === 'Clôturée' || m.status === 'Terminée');
             case 'search':
-                return scopeMissions.filter(m => (m.dateStart <= customEnd && m.dateEnd >= customStart));
+                return (user?.role === 'LOGISTIQUE' || user?.name === 'Mohamed OUALI') ? scopeMissions.filter(m => (m.dateStart <= customEnd && m.dateEnd >= customStart)) : [];
             default: return ongoingMissions;
         }
     };
@@ -127,15 +127,17 @@ const LogistiqueView = () => {
                                 <span className="badge bg-white text-primary ms-1">{closedMissions.length}</span>
                             </button>
                         </li>
-                        <li className="nav-item">
-                            <button
-                                className={`nav-link d-flex align-items-center justify-content-center gap-2 py-2 ${activeTab === 'search' ? 'active shadow-sm' : 'text-dark'}`}
-                                onClick={() => setActiveTab('search')}
-                            >
-                                <Filter size={18} />
-                                <span className="d-none d-md-inline">Recherche par Date</span>
-                            </button>
-                        </li>
+                        {(user?.role === 'LOGISTIQUE' || user?.name === 'Mohamed OUALI') && (
+                            <li className="nav-item">
+                                <button
+                                    className={`nav-link d-flex align-items-center justify-content-center gap-2 py-2 ${activeTab === 'search' ? 'active shadow-sm' : 'text-dark'}`}
+                                    onClick={() => setActiveTab('search')}
+                                >
+                                    <Filter size={18} />
+                                    <span className="d-none d-md-inline">Recherche par Date</span>
+                                </button>
+                            </li>
+                        )}
                     </ul>
                 </div>
             </div>
