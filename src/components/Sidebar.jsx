@@ -44,10 +44,14 @@ const Sidebar = () => {
         }
     }
 
-    navItems.push(
-        { icon: FileText, label: 'Notes de Frais', path: '/expenses' },
-        { icon: Settings, label: 'Paramètres', path: '/settings' }
-    );
+    const isRH = user?.role === 'ADMIN' && user?.department === 'RH';
+    const canSeeExpenses = user?.role === 'SUPER_ADMIN' || isRH;
+
+    const finalNavItems = [...navItems];
+    if (canSeeExpenses) {
+        finalNavItems.push({ icon: FileText, label: 'Notes de Frais', path: '/expenses' });
+    }
+    finalNavItems.push({ icon: Settings, label: 'Paramètres', path: '/settings' });
 
     return (
         <div className="d-flex flex-column flex-shrink-0 p-3 bg-white sidebar" style={{ width: '280px' }}>
@@ -65,7 +69,7 @@ const Sidebar = () => {
                 <small className="text-muted text-uppercase fw-bold" style={{ fontSize: '0.7rem' }}>Menu Principal</small>
             </div>
             <ul className="nav nav-pills flex-column mb-auto">
-                {navItems.map((item) => (
+                {finalNavItems.map((item) => (
                     <li className="nav-item mb-1" key={item.path}>
                         <NavLink
                             to={item.path}

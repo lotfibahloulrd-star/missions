@@ -1,4 +1,5 @@
-import { X, Save, Car, Hotel } from 'lucide-react';
+import { X, Save, Car, Hotel, DollarSign } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { generateMissionOrder } from '../utils/pdfGenerator';
 
@@ -18,6 +19,20 @@ const MissionReportModal = ({ mission, onClose, onSave }) => {
         avance: 0,
         observation: ''
     });
+
+    const calculateDurations = () => {
+        if (!mission.dateStart || !mission.dateEnd) return { days: 0, nights: 0 };
+        const start = new Date(mission.dateStart);
+        const end = new Date(mission.dateEnd);
+        const diffTime = Math.abs(end - start);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        return {
+            days: diffDays + 1,
+            nights: diffDays
+        };
+    };
+
+    const { days: missionDurationDays, nights: missionDurationNights } = calculateDurations();
 
     useEffect(() => {
         if (mission.reportData) {
@@ -95,6 +110,39 @@ const MissionReportModal = ({ mission, onClose, onSave }) => {
                                 <div className="col-md-2"><input type="text" className="form-control form-control-sm" placeholder="Km" value={formData.transportPerso.km} onChange={e => handleChange('transportPerso', 'km', e.target.value)} /></div>
                                 <div className="col-md-2"><input type="text" className="form-control form-control-sm" placeholder="Carburant" value={formData.transportPerso.carburant} onChange={e => handleChange('transportPerso', 'carburant', e.target.value)} /></div>
                                 <div className="col-md-2 text-muted small pe-0">Indemnité selon barème</div>
+                            </div>
+                        </div>
+
+                        {/* SECTION AUTOMATIQUE - BARÈME */}
+                        <div className="mb-4 bg-primary bg-opacity-10 p-3 rounded border border-primary border-opacity-25">
+                            <h6 className="fw-bold text-primary mb-3 d-flex align-items-center gap-2">
+                                <DollarSign size={18} /> Calcul Automatique (Barème Officiel)
+                            </h6>
+                            <div className="row g-3">
+                                <div className="col-md-4">
+                                    <div className="p-2 bg-white rounded shadow-sm">
+                                        <div className="small text-muted mb-1 text-uppercase fw-bold" style={{ fontSize: '0.65rem' }}>Indemnité Journalière</div>
+                                        <div className="d-flex justify-content-between align-items-end">
+                                            <span className="fw-bold fs-5">{missionDurationDays} Jours</span>
+                                            <span className="text-primary fw-bold">{(missionDurationDays * 2000).toLocaleString()} DA</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="col-md-4">
+                                    <div className="p-2 bg-white rounded shadow-sm">
+                                        <div className="small text-muted mb-1 text-uppercase fw-bold" style={{ fontSize: '0.65rem' }}>Indemnité Nuitée</div>
+                                        <div className="d-flex justify-content-between align-items-end">
+                                            <span className="fw-bold fs-5">{missionDurationNights} Nuits</span>
+                                            <span className="text-primary fw-bold">{(missionDurationNights * 800).toLocaleString()} DA</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="col-md-4">
+                                    <div className="p-2 bg-primary text-white rounded shadow-sm d-flex flex-column justify-content-center">
+                                        <div className="small text-white-50 text-uppercase fw-bold" style={{ fontSize: '0.65rem' }}>Total Indemnités</div>
+                                        <div className="fs-4 fw-bold">{(missionDurationDays * 2000 + missionDurationNights * 800).toLocaleString()} DA</div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 

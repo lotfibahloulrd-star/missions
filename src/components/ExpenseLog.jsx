@@ -16,11 +16,21 @@ const ExpenseLog = () => {
         setNewExpense({ type: 'Restoration', amount: '', date: new Date().toISOString().split('T')[0] });
     };
 
-    // Filter expenses if not admin? User probably only wants to see their own OR admins see all.
-    // Based on user request, "toutes les equipes soit a jour", admins should see everything.
-    const isPrivileged = ['SUPER_ADMIN', 'ADMIN'].includes(user?.role);
-    const displayedExpenses = isPrivileged ? expenses : expenses.filter(e => e.userId === user?.id);
+    const isRH = user?.role === 'ADMIN' && user?.department === 'RH';
+    const isPrivileged = user?.role === 'SUPER_ADMIN' || isRH;
 
+    if (!isPrivileged) {
+        return (
+            <div className="container-fluid p-4 text-center">
+                <div className="alert alert-danger shadow-sm border-0 d-inline-block px-5 py-4">
+                    <h4 className="fw-bold mb-3">Accès Restreint</h4>
+                    <p className="mb-0">Seuls les Super-Administrateurs et les Ressources Humaines peuvent accéder aux notes de frais globales.</p>
+                </div>
+            </div>
+        );
+    }
+
+    const displayedExpenses = expenses;
     const total = displayedExpenses.reduce((acc, curr) => acc + curr.amount, 0);
 
     return (

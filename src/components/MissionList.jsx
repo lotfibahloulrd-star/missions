@@ -167,14 +167,16 @@ const MissionList = ({ type = 'my' }) => {
                                                         <FileText size={14} />
                                                     </button>
 
-                                                    {/* 2. Seconde Partie (Frais & Logistique) */}
-                                                    <button
-                                                        onClick={() => setSelectedMission(mission)}
-                                                        className={`btn btn-sm ${mission.reportData ? 'btn-warning text-dark' : 'btn-outline-warning text-dark'}`}
-                                                        title={mission.reportData ? "Consulter Note de Frais" : "Saisir Note de Frais"}
-                                                    >
-                                                        <DollarSign size={14} />
-                                                    </button>
+                                                    {/* 2. Seconde Partie (Frais & Logistique) - Uniquement SUPER_ADMIN et RH */}
+                                                    {(currentUser.role === 'SUPER_ADMIN' || (currentUser.role === 'ADMIN' && currentUser.department === 'RH')) && (
+                                                        <button
+                                                            onClick={() => setSelectedMission(mission)}
+                                                            className={`btn btn-sm ${mission.reportData ? 'btn-warning text-dark' : 'btn-outline-warning text-dark'}`}
+                                                            title={mission.reportData ? "Consulter Note de Frais" : "Saisir Note de Frais"}
+                                                        >
+                                                            <DollarSign size={14} />
+                                                        </button>
+                                                    )}
 
                                                     {/* Share Button (Owner only) */}
                                                     {mission.userId === currentUser.id && (
@@ -183,8 +185,8 @@ const MissionList = ({ type = 'my' }) => {
                                                         </button>
                                                     )}
 
-                                                    {/* 3. Validation RH (Lamia/Fatiha/Admin only) */}
-                                                    {mission.status === 'Attente Validation RH' && ([3, 45].includes(currentUser.id) || currentUser.role === 'SUPER_ADMIN') && (
+                                                    {/* 3. Validation RH (RH/Admin only) */}
+                                                    {mission.status === 'Attente Validation RH' && (currentUser.role === 'SUPER_ADMIN' || (currentUser.role === 'ADMIN' && currentUser.department === 'RH')) && (
                                                         <button
                                                             onClick={() => {
                                                                 if (mission.visitReport && mission.reportData) {
@@ -361,7 +363,7 @@ const MissionList = ({ type = 'my' }) => {
                         .filter(Boolean)}
                     onValidate={updateMissionStatus}
                     onFinalValidate={validateMissionFinal}
-                    canFinalValidate={[3, 45].includes(currentUser.id) || currentUser.role === 'SUPER_ADMIN'}
+                    canFinalValidate={currentUser.role === 'SUPER_ADMIN' || (currentUser.role === 'ADMIN' && currentUser.department === 'RH')}
                     onReject={(id) => updateMissionStatus(id, 'Rejetée')}
                     onClose={() => setPreviewingMission(null)}
                 />
