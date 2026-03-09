@@ -252,7 +252,11 @@ const AdminDashboard = () => {
                                                 </span>
                                             </td>
                                             <td>
-                                                <span className={`badge ${mission.status === 'Validée' ? 'bg-success' : 'bg-warning text-dark'}`}>
+                                                <span className={`badge ${mission.status === 'Clôturée' ? 'bg-success' :
+                                                        mission.status === 'Attente Validation RH' ? 'bg-danger' :
+                                                            mission.status === 'Validée' ? 'bg-primary' :
+                                                                mission.status === 'En Attente' ? 'bg-warning text-dark' : 'bg-secondary'
+                                                    }`}>
                                                     {mission.status}
                                                 </span>
                                             </td>
@@ -266,7 +270,7 @@ const AdminDashboard = () => {
                                                         <Eye size={14} />
                                                     </button>
 
-                                                    {mission.status === 'Attente Validation RH' && ([3, 45].includes(user.id) || user.role === 'SUPER_ADMIN') && (
+                                                    {mission.status === 'Attente Validation RH' && (user.role === 'SUPER_ADMIN' || (user.role === 'ADMIN' && user.department === 'RH')) && (
                                                         <button
                                                             onClick={() => {
                                                                 if (mission.visitReport && mission.reportData) {
@@ -274,7 +278,10 @@ const AdminDashboard = () => {
                                                                         validateMissionFinal(mission.id);
                                                                     }
                                                                 } else {
-                                                                    alert("Le dossier est incomplet (Manque Rapport ou Note de Frais).");
+                                                                    let missing = [];
+                                                                    if (!mission.visitReport) missing.push("Rapport de visite (Compte rendu)");
+                                                                    if (!mission.reportData) missing.push("Note de Frais");
+                                                                    alert(`Le dossier est incomplet :\n- ${missing.join('\n- ')}`);
                                                                 }
                                                             }}
                                                             className={`btn btn-sm ${mission.visitReport && mission.reportData ? 'btn-danger text-white' : 'btn-secondary'} d-flex align-items-center gap-1`}

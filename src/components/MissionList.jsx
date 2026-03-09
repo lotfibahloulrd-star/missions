@@ -194,7 +194,10 @@ const MissionList = ({ type = 'my' }) => {
                                                                         validateMissionFinal(mission.id);
                                                                     }
                                                                 } else {
-                                                                    alert("Le dossier est incomplet (Manque Rapport ou Note de Frais).");
+                                                                    let missing = [];
+                                                                    if (!mission.visitReport) missing.push("Rapport de visite (Compte rendu)");
+                                                                    if (!mission.reportData) missing.push("Note de Frais");
+                                                                    alert(`Le dossier est incomplet :\n- ${missing.join('\n- ')}`);
                                                                 }
                                                             }}
                                                             className={`btn btn-sm ${mission.visitReport && mission.reportData ? 'btn-danger text-white' : 'btn-secondary'}`}
