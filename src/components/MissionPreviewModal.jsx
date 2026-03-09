@@ -132,19 +132,16 @@ const MissionPreviewModal = ({ mission, employee, participants, onValidate, onFi
                         ) : mission.status === 'Attente Validation RH' && canFinalValidate ? (
                             <button
                                 onClick={() => {
-                                    if (mission.visitReport && mission.reportData) {
+                                    if (mission.visitReport) {
                                         if (window.confirm("Confirmer la validation finale et la clôture de ce dossier ?")) {
                                             onFinalValidate(mission.id);
                                             onClose();
                                         }
                                     } else {
-                                        let missing = [];
-                                        if (!mission.visitReport) missing.push("Rapport de visite (Compte rendu)");
-                                        if (!mission.reportData) missing.push("Note de Frais");
-                                        alert(`Le dossier est incomplet :\n- ${missing.join('\n- ')}`);
+                                        alert("Le dossier est incomplet : Manque Rapport de visite (Compte rendu)");
                                     }
                                 }}
-                                className={`btn ${mission.visitReport && mission.reportData ? 'btn-danger' : 'btn-secondary'} flex-grow-1 d-flex align-items-center justify-content-center gap-2 py-2 fw-bold`}
+                                className={`btn ${mission.visitReport ? 'btn-danger' : 'btn-secondary'} flex-grow-1 d-flex align-items-center justify-content-center gap-2 py-2 fw-bold`}
                             >
                                 <CheckCircle size={18} /> Clôturer la Mission
                             </button>

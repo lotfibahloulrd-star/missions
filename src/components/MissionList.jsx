@@ -189,18 +189,15 @@ const MissionList = ({ type = 'my' }) => {
                                                     {mission.status === 'Attente Validation RH' && (currentUser.role === 'SUPER_ADMIN' || (currentUser.role === 'ADMIN' && currentUser.department === 'RH')) && (
                                                         <button
                                                             onClick={() => {
-                                                                if (mission.visitReport && mission.reportData) {
+                                                                if (mission.visitReport) {
                                                                     if (window.confirm("Confirmer la validation finale et la clôture de ce dossier ?")) {
                                                                         validateMissionFinal(mission.id);
                                                                     }
                                                                 } else {
-                                                                    let missing = [];
-                                                                    if (!mission.visitReport) missing.push("Rapport de visite (Compte rendu)");
-                                                                    if (!mission.reportData) missing.push("Note de Frais");
-                                                                    alert(`Le dossier est incomplet :\n- ${missing.join('\n- ')}`);
+                                                                    alert("Le dossier est incomplet : Manque Rapport de visite (Compte rendu)");
                                                                 }
                                                             }}
-                                                            className={`btn btn-sm ${mission.visitReport && mission.reportData ? 'btn-danger text-white' : 'btn-secondary'}`}
+                                                            className={`btn btn-sm ${mission.visitReport ? 'btn-danger text-white' : 'btn-secondary'}`}
                                                             title="Valider Clôture RH"
                                                         >
                                                             <CheckCircle size={14} />
