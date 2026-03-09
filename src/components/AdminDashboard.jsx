@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { generateMissionOrder, generateVisitReportPDF } from '../utils/pdfGenerator';
-import { Users, ClipboardCheck, TrendingUp, AlertCircle, UserPlus, Trash2, Mail, CheckCircle, Edit, Save, X, FileText, Download, Archive, Printer, Eye } from 'lucide-react';
+import { Users, ClipboardCheck, TrendingUp, AlertCircle, UserPlus, Trash2, Mail, CheckCircle, Edit, Save, X, FileText, Download, Archive, Printer, Eye, DollarSign } from 'lucide-react';
 import MissionPreviewModal from './MissionPreviewModal';
 import EmployeeMap from './EmployeeMap';
 import { Map as MapIcon, Navigation } from 'lucide-react';
@@ -253,9 +253,9 @@ const AdminDashboard = () => {
                                             </td>
                                             <td>
                                                 <span className={`badge ${mission.status === 'Clôturée' ? 'bg-success' :
-                                                        mission.status === 'Attente Validation RH' ? 'bg-danger' :
-                                                            mission.status === 'Validée' ? 'bg-primary' :
-                                                                mission.status === 'En Attente' ? 'bg-warning text-dark' : 'bg-secondary'
+                                                    mission.status === 'Attente Validation RH' ? 'bg-danger' :
+                                                        mission.status === 'Validée' ? 'bg-primary' :
+                                                            mission.status === 'En Attente' ? 'bg-warning text-dark' : 'bg-secondary'
                                                     }`}>
                                                     {mission.status}
                                                 </span>
@@ -824,7 +824,7 @@ const AdminDashboard = () => {
                         .filter(Boolean)}
                     onValidate={updateMissionStatus}
                     onFinalValidate={validateMissionFinal}
-                    canFinalValidate={[3, 45].includes(user.id) || user.role === 'SUPER_ADMIN'}
+                    canFinalValidate={user.role === 'SUPER_ADMIN' || (user.role === 'ADMIN' && user.department === 'RH')}
                     onReject={(id) => updateMissionStatus(id, 'Rejetée')}
                     onClose={() => setPreviewingMission(null)}
                 />
