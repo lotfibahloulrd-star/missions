@@ -617,7 +617,7 @@ const AdminDashboard = () => {
                                             <td className="ps-4">
                                                 <div className="d-flex align-items-center gap-2">
                                                     <div className="bg-light rounded-circle p-1 d-flex align-items-center justify-content-center" style={{ width: 32, height: 32 }}>
-                                                        <span className="fw-bold small text-primary">{employee?.name.charAt(0)}</span>
+                                                        <span className="fw-bold small text-primary">{employee?.name?.charAt(0) || '?'}</span>
                                                     </div>
                                                     <div>
                                                         <div className="fw-bold small">{employee?.name}</div>

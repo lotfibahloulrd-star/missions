@@ -7,7 +7,7 @@ export default defineConfig({
   plugins: [react()],
   base: '/missions/',
   build: {
-    outDir: path.resolve(__dirname, 'public_html/MISSIONS'),
+    outDir: path.resolve(__dirname, 'public_html/missions'),
     assetsDir: '',
     emptyOutDir: true
   }
