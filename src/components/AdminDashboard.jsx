@@ -656,6 +656,15 @@ const AdminDashboard = () => {
                                                     ) : (
                                                         <span className="text-muted small fst-italic ms-2">Pas de rapport</span>
                                                     )}
+                                                    {mission.reportData && (
+                                                        <button
+                                                            onClick={() => alert(`Note de Frais Mission ${mission.id}:\nBarème JF: 2000 DA/j\nBarème Nuitée: 800 DA/n\nTotal Validé: ${mission.reportData.hebergement?.frais + mission.reportData.repas?.frais + mission.reportData.divers?.frais} DA (+ per-diems)`)}
+                                                            className="btn btn-sm btn-outline-warning text-dark d-flex align-items-center gap-1"
+                                                            title="Consulter Note de Frais"
+                                                        >
+                                                            <DollarSign size={14} /> Frais
+                                                        </button>
+                                                    )}
                                                 </div>
                                             </td>
                                         </tr>
