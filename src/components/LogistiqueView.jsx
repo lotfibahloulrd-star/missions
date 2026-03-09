@@ -37,9 +37,9 @@ const LogistiqueView = () => {
 
     // Role-based filtering
     let scopeMissions = [];
-    if (user?.role === 'SUPER_ADMIN' || user?.role === 'LOGISTIQUE' || user?.name === 'Mohamed OUALI') {
+    if (['SUPER_ADMIN', 'LOGISTIQUE', 'ADMIN'].includes(user?.role)) {
         scopeMissions = allMissions;
-    } else if (user?.role === 'ADMIN') {
+    } else if (user?.role === 'MANAGER') {
         // Filter missions for the manager's team
         scopeMissions = allMissions.filter(m => {
             const employee = usersDb.find(u => u.id === m.userId);
@@ -69,7 +69,7 @@ const LogistiqueView = () => {
                 // Fix status filter and add date fallback
                 return scopeMissions.filter(m => m.status === 'Clôturée' || m.status === 'Terminée');
             case 'search':
-                return (user?.role === 'LOGISTIQUE' || user?.name === 'Mohamed OUALI') ? scopeMissions.filter(m => (m.dateStart <= customEnd && m.dateEnd >= customStart)) : [];
+                return (['LOGISTIQUE', 'ADMIN'].includes(user?.role)) ? scopeMissions.filter(m => (m.dateStart <= customEnd && m.dateEnd >= customStart)) : [];
             case 'all':
                 // Return every mission, regardless of status
                 return scopeMissions;
@@ -140,7 +140,7 @@ const LogistiqueView = () => {
                                 <span className="badge bg-white text-primary ms-1">{scopeMissions.length}</span>
                             </button>
                         </li>
-                        {(user?.role === 'LOGISTIQUE' || user?.name === 'Mohamed OUALI') && (
+                        {(['LOGISTIQUE', 'ADMIN'].includes(user?.role)) && (
                             <li className="nav-item">
                                 <button
                                     className={`nav-link d-flex align-items-center justify-content-center gap-2 py-2 ${activeTab === 'search' ? 'active shadow-sm' : 'text-dark'}`}

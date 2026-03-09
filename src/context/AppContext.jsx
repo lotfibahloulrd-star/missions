@@ -28,7 +28,7 @@ export const AppProvider = ({ children }) => {
             { id: 45, name: 'Fatiha BOURCHOUCH', email: 'f.bourchouch@esclab-algerie.com', password: 'user123', role: 'ADMIN', department: 'RH', region: 'National', phone: '' },
 
             // LOGISTIQUE
-            { id: 23, name: 'Mohamed OUALI', email: 'm.ouali@esclab-algerie.com', password: 'user123', role: 'LOGISTIQUE', department: 'LOGISTIQUE', region: 'National', phone: '' },
+            { id: 23, name: 'Mohamed OUALI', email: 'm.ouali@esclab-algerie.com', password: 'user123', role: 'ADMIN', department: 'LOGISTIQUE', region: 'National', phone: '' },
 
             // MANAGEMENT COMMERCIAL
             { id: 4, name: 'Farid TAAZIBT', email: 'f.taazibt@esclab-algerie.com', password: 'user123', role: 'MANAGER', department: 'COMMERCIAL', region: 'National', phone: '' },
@@ -339,7 +339,7 @@ export const AppProvider = ({ children }) => {
 
     const notifyAdmins = (subject, content, relatedDept = null) => {
         const recipients = usersDb.filter(u => {
-            if (['SUPER_ADMIN', 'LOGISTIQUE'].includes(u.role)) return true;
+            if (['SUPER_ADMIN', 'LOGISTIQUE', 'ADMIN'].includes(u.role)) return true;
 
             // RH department (DRH) always notified for validation tasks
             if (u.department === 'RH') return true;
@@ -680,7 +680,7 @@ Lien de validation : https://esclab-academy.com/missions/
             date: new Date().toLocaleDateString('fr-FR') + ' ' + new Date().toLocaleTimeString('fr-FR'),
             read: false,
         };
-        setMessagesDb(prev => [newMessage, ...prev]);
+        setMessagesDb(prev => [...prev, newMessage]);
         saveToServer('save_message', newMessage);
     };
 

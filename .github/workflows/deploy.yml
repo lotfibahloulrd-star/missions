@@ -1,4 +1,4 @@
-name: Deploy to Production
+name: 🎉 Deploy to Production
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
 
 jobs:
   web-deploy:
-    name: 🎉 Deploy
+    name: 🚀 Deploy
     runs-on: ubuntu-latest
     steps:
       - name: 🚚 Get latest code
@@ -16,7 +16,7 @@ jobs:
       - name: 🔧 Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 20
 
       - name: 📦 Install dependencies
         run: npm install
@@ -30,8 +30,8 @@ jobs:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          server-dir: /public_html/missions/
-          local-dir: ./dist/
+          server-dir: /public_html/MISSIONS/
+          local-dir: ./public_html/MISSIONS/
           protocol: ftp
           exclude: |
             **/.git*
