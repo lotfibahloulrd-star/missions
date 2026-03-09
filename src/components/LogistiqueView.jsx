@@ -48,7 +48,7 @@ const LogistiqueView = () => {
     }
 
     // Grouping
-    const closedMissions = scopeMissions.filter(m => m.status === 'Terminée');
+    const closedMissions = scopeMissions.filter(m => ['Clôturée', 'Terminée'].includes(m.status));
 
     const ongoingMissions = scopeMissions.filter(m => {
         // Must be validated and within the Sat-Thu window or active today
@@ -66,18 +66,41 @@ const LogistiqueView = () => {
             case 'ongoing': return ongoingMissions;
             case 'upcoming': return upcomingMissions;
             case 'closed':
-                // Fix status filter and add date fallback
-                return scopeMissions.filter(m => m.status === 'Clôturée' || m.status === 'Terminée');
+                return closedMissions;
             case 'search':
                 return (['LOGISTIQUE', 'ADMIN'].includes(user?.role)) ? scopeMissions.filter(m => (m.dateStart <= customEnd && m.dateEnd >= customStart)) : [];
             case 'all':
-                // Return every mission, regardless of status
-                return scopeMissions;
+                // Historique: All missions sorted by date (newest first)
+                return [...scopeMissions].sort((a, b) => new Date(b.dateStart) - new Date(a.dateStart));
             default: return ongoingMissions;
         }
     };
 
     const currentMissions = getDisplayMissions();
+
+    const getStatusBadge = (m) => {
+        const isCurrentlyActive = todayStr >= m.dateStart && todayStr <= m.dateEnd;
+
+        if (['Clôturée', 'Terminée'].includes(m.status)) {
+            return <span className="badge bg-secondary-subtle text-secondary px-3 py-2 border">Clôturée</span>;
+        }
+        if (m.status === 'Attente Validation RH' || m.status === 'Attente Validation') {
+            return <span className="badge bg-info-subtle text-info px-3 py-2 border">Attente RH</span>;
+        }
+        if (m.status === 'Validée') {
+            if (isCurrentlyActive) {
+                return <span className="badge bg-success shadow-sm px-3 py-2">Sur le terrain</span>;
+            }
+            if (m.dateStart > todayStr) {
+                return <span className="badge bg-info-subtle text-info px-3 py-2 border">Prévue</span>;
+            }
+            return <span className="badge bg-warning-subtle text-warning border px-3 py-2">Passée</span>;
+        }
+        if (m.status === 'Rejetée') {
+            return <span className="badge bg-danger-subtle text-danger px-3 py-2 border">Rejetée</span>;
+        }
+        return <span className="badge bg-light text-dark px-3 py-2 border">{m.status}</span>;
+    };
 
     return (
         <div className="container-fluid p-0">
@@ -106,7 +129,7 @@ const LogistiqueView = () => {
                                 onClick={() => setActiveTab('ongoing')}
                             >
                                 <Clock size={18} />
-                                <span className="d-none d-md-inline">Missions en cours (Semaine)</span>
+                                <span className="d-none d-md-inline">Missions en cours</span>
                                 <span className="badge bg-white text-primary ms-1">{ongoingMissions.length}</span>
                             </button>
                         </li>
@@ -126,7 +149,7 @@ const LogistiqueView = () => {
                                 onClick={() => setActiveTab('closed')}
                             >
                                 <CheckCircle2 size={18} />
-                                <span className="d-none d-md-inline">Missions clôturées</span>
+                                <span className="d-none d-md-inline">Dernières Clôtures</span>
                                 <span className="badge bg-white text-primary ms-1">{closedMissions.length}</span>
                             </button>
                         </li>
@@ -136,7 +159,7 @@ const LogistiqueView = () => {
                                 onClick={() => setActiveTab('all')}
                             >
                                 <Calendar size={18} />
-                                <span className="d-none d-md-inline">Historique</span>
+                                <span className="d-none d-md-inline">Historique Complet</span>
                                 <span className="badge bg-white text-primary ms-1">{scopeMissions.length}</span>
                             </button>
                         </li>
@@ -214,7 +237,6 @@ const LogistiqueView = () => {
                             ) : (
                                 currentMissions.map(m => {
                                     const employee = usersDb.find(u => u.id === m.userId);
-                                    const isCurrentlyActive = todayStr >= m.dateStart && todayStr <= m.dateEnd;
 
                                     return (
                                         <tr key={m.id}>
@@ -256,15 +278,7 @@ const LogistiqueView = () => {
                                                 </div>
                                             </td>
                                             <td className="pe-4 text-end">
-                                                {activeTab === 'closed' ? (
-                                                    <span className="badge bg-secondary-subtle text-secondary px-3 py-2 border">Terminée</span>
-                                                ) : activeTab === 'upcoming' ? (
-                                                    <span className="badge bg-info-subtle text-info px-3 py-2 border">Prévue</span>
-                                                ) : (
-                                                    <span className={`badge ${isCurrentlyActive ? 'bg-success shadow-sm' : 'bg-warning-subtle text-warning border border-warning'} px-3 py-2`}>
-                                                        {isCurrentlyActive ? 'Sur le terrain' : 'Programmé'}
-                                                    </span>
-                                                )}
+                                                {getStatusBadge(m)}
                                             </td>
                                         </tr>
                                     );
