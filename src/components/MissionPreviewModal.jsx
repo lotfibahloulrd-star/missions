@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { X, Calendar, MapPin, Users, Building, Info, CheckCircle, XCircle, User } from 'lucide-react';
+import { X, Calendar, MapPin, Users, Building, Info, CheckCircle, XCircle, User, FileText } from 'lucide-react';
 
 const MissionPreviewModal = ({ mission, employee, participants, onValidate, onFinalValidate, canFinalValidate, onReject, onClose }) => {
     useEffect(() => {
@@ -138,7 +138,10 @@ const MissionPreviewModal = ({ mission, employee, participants, onValidate, onFi
                                             onClose();
                                         }
                                     } else {
-                                        alert("Le dossier est incomplet (Manque Rapport ou Note de Frais).");
+                                        let missing = [];
+                                        if (!mission.visitReport) missing.push("Rapport de visite (Compte rendu)");
+                                        if (!mission.reportData) missing.push("Note de Frais");
+                                        alert(`Le dossier est incomplet :\n- ${missing.join('\n- ')}`);
                                     }
                                 }}
                                 className={`btn ${mission.visitReport && mission.reportData ? 'btn-danger' : 'btn-secondary'} flex-grow-1 d-flex align-items-center justify-content-center gap-2 py-2 fw-bold`}
