@@ -1,0 +1,13 @@
+
+> test@0.0.0 build
+> vite build
+
+[36mvite v7.3.0 [32mbuilding client environment for production...[36m[39m
+transforming...
+[32m???[39m 1781 modules transformed.
+rendering chunks...
+computing gzip size...
+[2mpublic_html/missions/[22m[32mindex.html          [39m[1m[2m  0.64 kB[22m[1m[22m[2m ??? gzip:   0.42 kB[22m
+[2mpublic_html/missions/[22m[35mindex-XmaQ3Fc2.css  [39m[1m[2m248.68 kB[22m[1m[22m[2m ??? gzip:  38.15 kB[22m
+[2mpublic_html/missions/[22m[36mindex-CQT16D8h.js   [39m[1m[33m621.65 kB[39m[22m[2m ??? gzip: 182.66 kB[22m
+[32m??? built in 4.66s[39m
