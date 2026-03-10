@@ -38,7 +38,7 @@ const AdminDashboard = () => {
         return d.getMonth() === currentMonth && d.getFullYear() === now.getFullYear();
     });
 
-    const monthlyBudget = monthlyMissions.reduce((acc, m) => acc + (m.budget || 0), 0);
+    const monthlyBudget = monthlyMissions.reduce((acc, m) => acc + calculateMissionExpenses(m.dateStart, m.dateEnd), 0);
     const missionsByDept = monthlyMissions.reduce((acc, m) => {
         const ownerId = m.userId || m.userIds?.[0];
         const emp = usersDb.find(u => u.id === ownerId);
@@ -71,7 +71,7 @@ const AdminDashboard = () => {
 
     const totalMissions = relevantMissions.length;
     const pendingValidation = relevantMissions.filter(m => m.status === 'En Attente').length;
-    const totalBudgetParams = allMissions.reduce((acc, curr) => acc + (curr.budget || 0), 0);
+    const totalBudgetParams = allMissions.reduce((acc, curr) => acc + calculateMissionExpenses(curr.dateStart, curr.dateEnd), 0);
     const myMessages = messagesDb.filter(m => m.toUserId === user.id);
     const unreadMessages = myMessages.filter(m => !m.read).length;
 
@@ -221,6 +221,7 @@ const AdminDashboard = () => {
                                     <th className="ps-4">Employé</th>
                                     <th>Destination</th>
                                     <th>Dates</th>
+                                    <th>Frais (Barème)</th>
                                     <th>Justificatif</th>
                                     <th>Statut</th>
                                     <th className="text-end pe-4">Action</th>
@@ -258,9 +259,12 @@ const AdminDashboard = () => {
                                                 </span>
                                             </td>
                                             <td className="small text-muted">{mission.dateStart} - {mission.dateEnd}</td>
+                                            <td className="fw-bold text-primary">
+                                                {calculateMissionExpenses(mission.dateStart, mission.dateEnd).toLocaleString()} DA
+                                            </td>
                                             <td>
                                                 <span className="badge bg-light text-dark border">
-                                                    {mission.budget > 10000 ? '⚠️ Budget Élevé' : 'Standard'}
+                                                    {mission.visitReport ? '📄 Rapport Présent' : '⏳ En attente'}
                                                 </span>
                                             </td>
                                             <td>

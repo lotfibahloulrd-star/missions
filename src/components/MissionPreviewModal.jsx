@@ -1,7 +1,10 @@
 import React, { useEffect } from 'react';
-import { X, Calendar, MapPin, Users, Building, Info, CheckCircle, XCircle, User, FileText } from 'lucide-react';
+import { X, Calendar, MapPin, Users, Building, Info, CheckCircle, XCircle, User, FileText, DollarSign } from 'lucide-react';
+import { useAppContext } from '../context/AppContext';
 
 const MissionPreviewModal = ({ mission, employee, participants, onValidate, onFinalValidate, canFinalValidate, onReject, onClose }) => {
+    const { calculateMissionExpenses } = useAppContext();
+    const totalFrais = calculateMissionExpenses(mission?.dateStart, mission?.dateEnd);
     useEffect(() => {
         const handleEsc = (e) => {
             if (e.key === 'Escape') onClose();
@@ -88,9 +91,10 @@ const MissionPreviewModal = ({ mission, employee, participants, onValidate, onFi
                             </div>
                         </div>
 
-                        <div className="col-12 text-center">
-                            <div className="h4 fw-bold text-primary mb-0">{mission.budget?.toLocaleString()} DA</div>
-                            <small className="text-muted text-uppercase fw-bold" style={{ fontSize: '0.7rem' }}>Budget Estimé</small>
+                        <div className="col-12 text-center py-3 bg-primary bg-opacity-10 rounded-3 border border-primary border-opacity-10">
+                            <div className="h4 fw-bold text-primary mb-0">{totalFrais.toLocaleString()} DA</div>
+                            <small className="text-muted text-uppercase fw-bold" style={{ fontSize: '0.7rem' }}>Frais de Mission (Barème Forfaitaire)</small>
+                            <div className="text-muted mt-1" style={{ fontSize: '0.65rem' }}>Barème : 2000 DA/jour + 800 DA/nuitée</div>
                         </div>
 
                         {mission.visitReport && (

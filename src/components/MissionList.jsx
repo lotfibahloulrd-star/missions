@@ -143,8 +143,10 @@ const MissionList = ({ type = 'my' }) => {
                                     </div>
 
                                     <div className="text-end ps-lg-4 border-lg-start" style={{ minWidth: '180px' }}>
-                                        <div className="h4 fw-bold mb-0 text-primary">{mission.budget ? mission.budget.toLocaleString() : '-'} <small className="fs-6 text-muted">DA</small></div>
-                                        <small className="text-muted text-uppercase fw-semibold d-block mb-3" style={{ fontSize: '0.7rem' }}>Budget Estimé</small>
+                                        <div className="h4 fw-bold mb-0 text-primary" title={`Barème : 2000 DA/j + 800 DA/n`}>
+                                            {calculateMissionExpenses(mission.dateStart, mission.dateEnd).toLocaleString()} <small className="fs-6 text-muted">DA</small>
+                                        </div>
+                                        <small className="text-muted text-uppercase fw-semibold d-block mb-3" style={{ fontSize: '0.7rem' }}>Frais de Mission (Forfait)</small>
 
                                         <div className="d-flex gap-2 justify-content-end flex-wrap">
                                             <button
