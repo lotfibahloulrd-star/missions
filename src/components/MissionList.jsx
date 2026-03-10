@@ -50,7 +50,7 @@ const ShareModal = ({ mission, users, onShare, onClose }) => {
 };
 
 const MissionList = ({ type = 'my' }) => {
-    const { missions, usersDb, user: currentUser, globalSettings, saveMissionReport, shareReport, updateMissionStatus, validateMissionFinal, deleteMission } = useAppContext();
+    const { missions, usersDb, user: currentUser, globalSettings, saveMissionReport, shareReport, updateMissionStatus, validateMissionFinal, deleteMission, calculateMissionExpenses } = useAppContext();
     const [selectedMission, setSelectedMission] = useState(null);
     const [visitReportMission, setVisitReportMission] = useState(null);
     const [shareingMission, setShareingMission] = useState(null);
