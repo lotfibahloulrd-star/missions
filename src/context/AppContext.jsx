@@ -245,7 +245,7 @@ export const AppProvider = ({ children }) => {
                 checkMissionDeadlines(sanitizedMissions);
             }
         } catch (err) {
-            console.error("Erreur de synchronisation avec le serveur.");
+            console.error("Erreur de synchronisation avec le serveur:", err);
         } finally {
             setIsInitialLoad(false);
         }
