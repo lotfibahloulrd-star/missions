@@ -219,8 +219,9 @@ export const AppProvider = ({ children }) => {
                     setUsersDb(finalUsers);
                     localStorage.setItem('missiondz_users_db_v4', JSON.stringify(finalUsers));
                 }
+                let sanitizedMissions = [];
                 if (Array.isArray(data.missions)) {
-                    const sanitizedMissions = data.missions.map(m => ({
+                    sanitizedMissions = data.missions.map(m => ({
                         ...m,
                         status: m.status || 'En Attente'
                     }));
