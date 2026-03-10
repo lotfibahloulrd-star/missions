@@ -217,7 +217,11 @@ export const AppProvider = ({ children }) => {
                     }
 
                     setUsersDb(finalUsers);
-                    localStorage.setItem('missiondz_users_db_v4', JSON.stringify(finalUsers));
+                    try {
+                        localStorage.setItem('missiondz_users_db_v4', JSON.stringify(finalUsers));
+                    } catch (e) {
+                        console.warn("localStorage persistence failed for users");
+                    }
                 }
                 let sanitizedMissions = [];
                 if (Array.isArray(data.missions)) {
@@ -226,19 +230,35 @@ export const AppProvider = ({ children }) => {
                         status: m.status || 'En Attente'
                     }));
                     setMissions(sanitizedMissions);
-                    localStorage.setItem('missiondz_missions', JSON.stringify(sanitizedMissions));
+                    try {
+                        localStorage.setItem('missiondz_missions', JSON.stringify(sanitizedMissions));
+                    } catch (e) {
+                        console.warn("localStorage persistence failed for missions");
+                    }
                 }
                 if (data.settings && typeof data.settings === 'object') {
                     setGlobalSettings(data.settings);
-                    localStorage.setItem('missiondz_settings', JSON.stringify(data.settings));
+                    try {
+                        localStorage.setItem('missiondz_settings', JSON.stringify(data.settings));
+                    } catch (e) {
+                        console.warn("localStorage persistence failed for settings");
+                    }
                 }
                 if (Array.isArray(data.messages)) {
                     setMessagesDb(data.messages);
-                    localStorage.setItem('missiondz_messages', JSON.stringify(data.messages));
+                    try {
+                        localStorage.setItem('missiondz_messages', JSON.stringify(data.messages.slice(-100))); 
+                    } catch (e) {
+                        console.warn("Could not save messages to localStorage:", e);
+                    }
                 }
                 if (Array.isArray(data.expenses)) {
                     setExpenses(data.expenses);
-                    localStorage.setItem('missiondz_expenses', JSON.stringify(data.expenses));
+                    try {
+                        localStorage.setItem('missiondz_expenses', JSON.stringify(data.expenses));
+                    } catch (e) {
+                        console.warn("Could not save expenses to localStorage:", e);
+                    }
                 }
 
                 // Trigger background logic after loading data with FRESH missions
@@ -265,11 +285,19 @@ export const AppProvider = ({ children }) => {
     // We removed the auto-sync to server from here to prevent overwriting server state with stale local state.
     // Server sync is now done explicitly in action functions (addUser, addMission, etc.)
     useEffect(() => {
-        localStorage.setItem('missiondz_users_db_v4', JSON.stringify(usersDb));
+        try {
+            localStorage.setItem('missiondz_users_db_v4', JSON.stringify(usersDb));
+        } catch (e) {
+            console.warn("localStorage persistence failed for users");
+        }
     }, [usersDb]);
 
     useEffect(() => {
-        localStorage.setItem('missiondz_missions', JSON.stringify(missions));
+        try {
+            localStorage.setItem('missiondz_missions', JSON.stringify(missions));
+        } catch (e) {
+            console.warn("localStorage persistence failed for missions");
+        }
     }, [missions]);
 
     useEffect(() => {
@@ -281,15 +309,27 @@ export const AppProvider = ({ children }) => {
     }, [currentUser]);
 
     useEffect(() => {
-        localStorage.setItem('missiondz_settings', JSON.stringify(globalSettings));
+        try {
+            localStorage.setItem('missiondz_settings', JSON.stringify(globalSettings));
+        } catch (e) {
+            console.warn("localStorage persistence failed for settings");
+        }
     }, [globalSettings]);
 
     useEffect(() => {
-        localStorage.setItem('missiondz_messages', JSON.stringify(messagesDb));
+        try {
+            localStorage.setItem('missiondz_messages', JSON.stringify(messagesDb.slice(-100)));
+        } catch (e) {
+            console.warn("localStorage persistence failed for messages");
+        }
     }, [messagesDb]);
 
     useEffect(() => {
-        localStorage.setItem('missiondz_expenses', JSON.stringify(expenses));
+        try {
+            localStorage.setItem('missiondz_expenses', JSON.stringify(expenses));
+        } catch (e) {
+            console.warn("localStorage persistence failed for expenses");
+        }
     }, [expenses]);
 
     // Actions
