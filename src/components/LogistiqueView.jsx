@@ -68,7 +68,7 @@ const LogistiqueView = () => {
             case 'closed':
                 return closedMissions;
             case 'search':
-                return (['LOGISTIQUE', 'ADMIN'].includes(user?.role)) ? scopeMissions.filter(m => (m.dateStart <= customEnd && m.dateEnd >= customStart)) : [];
+                return (['LOGISTIQUE', 'ADMIN', 'SUPER_ADMIN'].includes(user?.role)) ? scopeMissions.filter(m => (m.dateStart <= customEnd && m.dateEnd >= customStart)) : [];
             case 'all':
                 // Historique: All missions sorted by date (newest first)
                 return [...scopeMissions].sort((a, b) => new Date(b.dateStart) - new Date(a.dateStart));
@@ -81,10 +81,10 @@ const LogistiqueView = () => {
     const getStatusBadge = (m) => {
         const isCurrentlyActive = todayStr >= m.dateStart && todayStr <= m.dateEnd;
 
-        if (['Clôturée', 'Terminée'].includes(m.status)) {
+        if (m.status === 'Clôturée') {
             return <span className="badge bg-secondary-subtle text-secondary px-3 py-2 border">Clôturée</span>;
         }
-        if (m.status === 'Attente Validation RH' || m.status === 'Attente Validation') {
+        if (m.status === 'Attente Validation RH' || m.status === 'Attente Validation' || m.status === 'Terminée') {
             return <span className="badge bg-info-subtle text-info px-3 py-2 border">Attente RH</span>;
         }
         if (m.status === 'Validée') {

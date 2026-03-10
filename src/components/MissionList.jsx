@@ -172,7 +172,7 @@ const MissionList = ({ type = 'my' }) => {
                                                         <button
                                                             onClick={() => setSelectedMission(mission)}
                                                             className={`btn btn-sm ${mission.reportData ? 'btn-warning text-dark' : 'btn-outline-warning text-dark'}`}
-                                                            title={mission.reportData ? "Consulter Note de Frais" : "Saisir Note de Frais"}
+                                                            title={mission.reportData ? "Consulter Frais de Mission" : "Saisir Frais de Mission"}
                                                         >
                                                             <DollarSign size={14} />
                                                         </button>

@@ -102,7 +102,7 @@ const MissionPreviewModal = ({ mission, employee, participants, onValidate, onFi
                                     <small className="text-muted d-block mb-1 fw-bold">Clients / Établissements :</small>
                                     <div className="d-flex flex-wrap gap-1">
                                         {(mission.clients || []).map((c, i) => (
-                                            <span key={i} className="badge bg-white text-dark border fw-normal">{c}</span>
+                                            <span key={i} className="badge bg-white text-dark border fw-normal">{c.name || c}</span>
                                         ))}
                                     </div>
                                 </div>

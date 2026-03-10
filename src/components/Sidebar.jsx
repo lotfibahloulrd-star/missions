@@ -49,7 +49,7 @@ const Sidebar = () => {
 
     const finalNavItems = [...navItems];
     if (canSeeExpenses) {
-        finalNavItems.push({ icon: FileText, label: 'Notes de Frais', path: '/expenses' });
+        finalNavItems.push({ icon: FileText, label: 'Frais de Mission', path: '/expenses' });
     }
     finalNavItems.push({ icon: Settings, label: 'Paramètres', path: '/settings' });
 

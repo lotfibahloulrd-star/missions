@@ -149,17 +149,33 @@ export const AppProvider = ({ children }) => {
     });
     const [isInitialLoad, setIsInitialLoad] = useState(true);
 
+    // Helper for automated mission expense calculation (New Policy: 2000 DA/day + 800 DA/night)
+    const calculateMissionExpenses = (dateStart, dateEnd) => {
+        if (!dateStart || !dateEnd) return 0;
+        const start = new Date(dateStart);
+        const end = new Date(dateEnd);
+        const diffTime = Math.abs(end - start);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        const days = diffDays + 1;
+        const nights = diffDays;
+        return (days * 2000) + (nights * 800);
+    };
+
     // Server-side Sync Helpers - UPDATED for Granular Safety
     const saveToServer = async (action, data) => {
         try {
             const apiUrl = `${import.meta.env.BASE_URL}data_api.php?action=${action}`;
-            await fetch(apiUrl, {
+            const res = await fetch(apiUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ data }) // data wrapped in 'data' key for consistency
+                body: JSON.stringify({ data })
             });
+            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+            const result = await res.json();
+            return result.success;
         } catch (err) {
             console.error(`Error saving ${action} to server:`, err);
+            return false;
         }
     };
 
@@ -372,10 +388,19 @@ export const AppProvider = ({ children }) => {
             reminders: { h1: false, h24: false, h36: false, h48: false }
         }));
 
-        setMissions([...newMissions, ...missions]);
+        setMissions(prev => [...newMissions, ...prev]);
 
-        // Save each generated mission to server
-        newMissions.forEach(m => saveToServer('save_mission', m));
+        // Save sequentially to avoid race conditions on the flat-file server
+        const saveAll = async () => {
+            for (const m of newMissions) {
+                const success = await saveToServer('save_mission', m);
+                if (!success) {
+                    console.error(`Failed to save mission ${m.id} to server.`);
+                    // Fallback: Notify user or retry
+                }
+            }
+        };
+        saveAll();
 
         // Notifications
         const destinations = (missionData.destinations || [missionData.destination]).join(', ');
@@ -628,6 +653,7 @@ Lien de validation : https://esclab-academy.com/missions/
         });
     };
 
+    // Formerly saveMissionReport, now saveMissionExpenses for general mission logistique/frais
     const saveMissionReport = (missionId, reportData) => {
         setMissions(prevMissions => {
             const mission = prevMissions.find(m => m.id === missionId);
@@ -860,8 +886,8 @@ Lien de validation : https://esclab-academy.com/missions/
                 const isShared = m.sharedWith?.includes(myId);
                 if (isShared) return true;
 
-                // DRH (RH Dept) special visibility: Can see all missions awaiting validation or closed
-                if (currentUser.department === 'RH' && ['Attente Validation RH', 'Clôturée', 'Validée'].includes(m.status)) return true;
+                // DRH (RH Dept) special visibility: Can see all missions awaiting validation, pending, or closed
+                if (currentUser.department === 'RH' && ['En Attente', 'Attente Validation RH', 'Clôturée', 'Validée'].includes(m.status)) return true;
 
                 const ownerId = m.userId || m.userIds?.[0];
                 const owner = usersDb.find(u => u.id === ownerId);
@@ -911,7 +937,8 @@ Lien de validation : https://esclab-academy.com/missions/
             updateMission,
             updateMissionStatus,
             deleteMission,
-            saveMissionReport,
+            saveMissionExpenses: saveMissionReport, // Rename internally exposed but keep function for now
+            calculateMissionExpenses,
             shareReport,
             saveVisitReport,
             validateMissionFinal,

@@ -82,7 +82,7 @@ const MissionReportModal = ({ mission, onClose, onSave }) => {
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="card-header bg-white py-3 d-flex justify-content-between align-items-center sticky-top">
-                    <h5 className="mb-0 fw-bold">Rapport de Mission (Interne)</h5>
+                    <h5 className="mb-0 fw-bold">Frais de Mission (#${mission.id})</h5>
                     <button onClick={onClose} className="btn btn-sm btn-light rounded-circle p-2"><X size={20} /></button>
                 </div>
                 <div className="card-body">
@@ -146,42 +146,23 @@ const MissionReportModal = ({ mission, onClose, onSave }) => {
                             </div>
                         </div>
 
-                        {/* SECTION SEJOUR */}
+                        {/* SECTION SEJOUR - SIMPLIFIED: ONLY DIVERS/AVANCE/OBSERVATION */}
                         <div className="mb-4">
-                            <h6 className="fw-bold text-primary border-bottom pb-2 mb-3 d-flex align-items-center gap-2"><Hotel size={18} /> Frais de Séjour & Divers</h6>
+                            <h6 className="fw-bold text-primary border-bottom pb-2 mb-3 d-flex align-items-center gap-2"><Hotel size={18} /> Détails Complémentaires</h6>
 
                             <div className="row g-3">
-                                {/* Hebergement */}
-                                <div className="col-md-12">
-                                    <div className="input-group input-group-sm">
-                                        <span className="input-group-text fw-semibold" style={{ width: 120 }}>Hébergement</span>
-                                        <input type="text" className="form-control" placeholder="Adresse complète" value={formData.hebergement.adresse} onChange={e => handleChange('hebergement', 'adresse', e.target.value)} />
-                                        <input type="number" className="form-control" placeholder="Nuitées" style={{ maxWidth: 80 }} value={formData.hebergement.nuitee} onChange={e => handleChange('hebergement', 'nuitee', e.target.value)} />
-                                        <input type="number" className="form-control" placeholder="Montant (DA)" style={{ maxWidth: 120 }} value={formData.hebergement.frais} onChange={e => handleChange('hebergement', 'frais', e.target.value)} />
-                                    </div>
-                                </div>
-
-                                {/* Repas */}
-                                <div className="col-md-12">
-                                    <div className="input-group input-group-sm">
-                                        <span className="input-group-text fw-semibold" style={{ width: 120 }}>Repas</span>
-                                        <input type="text" className="form-control bg-light" disabled value="Forfait / Frais réels selon justificatifs" />
-                                        <input type="number" className="form-control" placeholder="Montant Global (DA)" style={{ maxWidth: 150 }} value={formData.repas.frais} onChange={e => handleChange('repas', 'frais', e.target.value)} />
-                                    </div>
-                                </div>
-
-                                {/* Divers & Avance */}
-                                <div className="col-md-6">
-                                    <label className="form-label small fw-bold">Frais Divers (DA)</label>
-                                    <input type="number" className="form-control form-control-sm" value={formData.divers.frais} onChange={e => handleChange('divers', 'frais', e.target.value)} />
-                                </div>
+                                {/* Avance Perçue */}
                                 <div className="col-md-6">
                                     <label className="form-label small fw-bold">Avance Perçue (DA)</label>
                                     <input type="number" className="form-control form-control-sm" value={formData.avance} onChange={e => handleSimpleChange('avance', e.target.value)} />
                                 </div>
+                                <div className="col-md-6">
+                                    <label className="form-label small fw-bold">Frais Divers Justifiés (DA)</label>
+                                    <input type="number" className="form-control form-control-sm" value={formData.divers.frais} onChange={e => handleChange('divers', 'frais', e.target.value)} />
+                                </div>
                                 <div className="col-12">
-                                    <label className="form-label small fw-bold">Observation (Optionnel)</label>
-                                    <textarea className="form-control form-control-sm" rows="2" value={formData.observation} onChange={e => handleSimpleChange('observation', e.target.value)}></textarea>
+                                    <label className="form-label small fw-bold">Observation / Notes de frais (Optionnel)</label>
+                                    <textarea className="form-control form-control-sm" rows="2" placeholder="Ex: détails des frais divers..." value={formData.observation} onChange={e => handleSimpleChange('observation', e.target.value)}></textarea>
                                 </div>
                             </div>
                         </div>

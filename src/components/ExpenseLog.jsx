@@ -3,7 +3,7 @@ import { Upload, Plus, Trash2, DollarSign, Briefcase, FileText, Calendar, MapPin
 import { useAppContext } from '../context/AppContext';
 
 const ExpenseLog = () => {
-    const { expenses, addExpense, deleteExpense, user, allMissions, usersDb } = useAppContext();
+    const { expenses, addExpense, deleteExpense, user, allMissions, usersDb, calculateMissionExpenses } = useAppContext();
     const [newExpense, setNewExpense] = useState({ type: 'Restoration', amount: '', date: new Date().toISOString().split('T')[0] });
     const [activeTab, setActiveTab] = useState('manual'); // 'manual' or 'missions'
 
@@ -35,26 +35,8 @@ const ExpenseLog = () => {
     const manualTotal = displayedExpenses.reduce((acc, curr) => acc + curr.amount, 0);
 
     // Calculate Mission Expenses History
-    const calculateMissionTotal = (reportData, dateStart, dateEnd) => {
-        if (!dateStart || !dateEnd) return 0;
-        const start = new Date(dateStart);
-        const end = new Date(dateEnd);
-        const diffTime = Math.abs(end - start);
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        const days = diffDays + 1;
-        const nights = diffDays;
-
-        const perDiem = (days * 2000) + (nights * 800);
-        const hotel = Number(reportData.hebergement?.frais || 0);
-        const repas = Number(reportData.repas?.frais || 0);
-        const divers = Number(reportData.divers?.frais || 0);
-        // We subtract the advance to show the "Restant à Payer" or just show the total? 
-        // Usually, the history shows the Total incurred.
-        return perDiem + hotel + repas + divers;
-    };
-
     const missionExpenses = allMissions
-        .filter(m => m.reportData && m.status === 'Clôturée')
+        .filter(m => m.status === 'Clôturée')
         .map(m => ({
             id: m.id,
             userId: m.userId,
@@ -62,7 +44,7 @@ const ExpenseLog = () => {
             destination: (m.destinations || [m.destination]).join(', '),
             date: m.dateEnd,
             period: `${m.dateStart} au ${m.dateEnd}`,
-            amount: calculateMissionTotal(m.reportData, m.dateStart, m.dateEnd),
+            amount: calculateMissionExpenses(m.dateStart, m.dateEnd),
             reportData: m.reportData
         }));
 
@@ -80,7 +62,7 @@ const ExpenseLog = () => {
                         </p>
                     </div>
                     <div className="text-end">
-                        <span className="text-white-50 small text-uppercase fw-bold">Total {activeTab === 'manual' ? "Frais Divers" : "Frais Missions"}</span>
+                        <span className="text-white-50 small text-uppercase fw-bold">Total {activeTab === 'manual' ? "Frais Divers" : "Frais de Missions"}</span>
                         <div className="display-6 fw-bold">{(activeTab === 'manual' ? manualTotal : missionTotal).toLocaleString()} DA</div>
                     </div>
                 </div>
@@ -101,7 +83,7 @@ const ExpenseLog = () => {
                         className={`nav-link px-4 fw-bold ${activeTab === 'missions' ? 'active shadow-sm' : 'bg-white text-dark border'}`}
                         onClick={() => setActiveTab('missions')}
                     >
-                        <Briefcase size={18} className="me-2" /> Historique Notes de Mission
+                        <Briefcase size={18} className="me-2" /> Historique Frais de Mission
                     </button>
                 </li>
             </ul>
@@ -280,8 +262,8 @@ const ExpenseLog = () => {
                                                     <td className="text-end pe-4">
                                                         <button
                                                             className="btn btn-sm btn-outline-dark"
-                                                            title="Voir Note de Frais"
-                                                            onClick={() => alert(`Détails Mission ${mission.id}:\n- JF (2000 DA/j)\n- Nuitée (800 DA/n)\n- Hébergement: ${mission.reportData?.hebergement?.frais} DA\n- Repas: ${mission.reportData?.repas?.frais} DA`)}
+                                                            title="Voir Frais de Mission"
+                                                            onClick={() => alert(`Détails Mission ${mission.id}:\n- JF (2000 DA/j)\n- Nuitée (800 DA/n)\nTotal: ${mission.amount} DA`)}
                                                         >
                                                             <Eye size={14} className="me-1" /> Détails
                                                         </button>

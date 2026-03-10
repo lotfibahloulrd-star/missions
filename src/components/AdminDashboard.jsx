@@ -7,7 +7,7 @@ import EmployeeMap from './EmployeeMap';
 import { Map as MapIcon, Navigation } from 'lucide-react';
 
 const AdminDashboard = () => {
-    const { user, allMissions, usersDb, updateMissionStatus, validateMissionFinal, addUser, updateUser, deleteUser, messagesDb, markMessageAsRead, deleteMessage, deleteMission, globalSettings } = useAppContext();
+    const { user, allMissions, usersDb, updateMissionStatus, validateMissionFinal, addUser, updateUser, deleteUser, messagesDb, markMessageAsRead, deleteMessage, deleteMission, globalSettings, calculateMissionExpenses } = useAppContext();
 
     // Form & UI States
     const [userForm, setUserForm] = useState({ name: '', email: '', password: '', role: 'USER', department: 'COMMERCIAL', region: 'Alger', phone: '' });
@@ -22,7 +22,18 @@ const AdminDashboard = () => {
     const currentMonth = now.getMonth();
     const currentMonthLabel = now.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
 
-    const monthlyMissions = allMissions.filter(m => {
+    const getGroupedMissions = (missionsList) => {
+        const groupedMap = new Map();
+        [...missionsList].sort((a, b) => a.id - b.id).forEach(m => {
+            const key = m.groupId || m.id;
+            if (!groupedMap.has(key)) {
+                groupedMap.set(key, m);
+            }
+        });
+        return Array.from(groupedMap.values()).sort((a, b) => b.id - a.id);
+    };
+
+    const monthlyMissions = getGroupedMissions(allMissions).filter(m => {
         const d = new Date(m.dateStart);
         return d.getMonth() === currentMonth && d.getFullYear() === now.getFullYear();
     });
@@ -45,13 +56,14 @@ const AdminDashboard = () => {
         user?.name?.toLowerCase().includes('lotfi bahloul');
     const isBoss = user.role === 'SUPER_ADMIN' || user.department === 'RH'; // used for analytics tab
     const isPrivileged = ['ADMIN', 'MANAGER'].includes(user.role); // limited view for admins/managers
+
     const relevantMissions = isSuperAdmin
-        ? allMissions
-        : allMissions.filter(m => {
+        ? getGroupedMissions(allMissions)
+        : getGroupedMissions(allMissions.filter(m => {
             const ownerId = m.userId || m.userIds?.[0];
             const missionUser = usersDb.find(u => u.id === ownerId);
             return missionUser?.department === user.department;
-        });
+        }));
 
     const relevantUsers = isSuperAdmin
         ? usersDb
@@ -660,15 +672,14 @@ const AdminDashboard = () => {
                                                     ) : (
                                                         <span className="text-muted small fst-italic ms-2">Pas de rapport</span>
                                                     )}
-                                                    {mission.reportData && (
-                                                        <button
-                                                            onClick={() => alert(`Note de Frais Mission ${mission.id}:\nBarème JF: 2000 DA/j\nBarème Nuitée: 800 DA/n\nTotal Validé: ${mission.reportData.hebergement?.frais + mission.reportData.repas?.frais + mission.reportData.divers?.frais} DA (+ per-diems)`)}
-                                                            className="btn btn-sm btn-outline-warning text-dark d-flex align-items-center gap-1"
-                                                            title="Consulter Note de Frais"
-                                                        >
-                                                            <DollarSign size={14} /> Frais
-                                                        </button>
-                                                    )}
+                                                    {/* Display Frais de Mission Button if mission is closed */}
+                                                    <button
+                                                        onClick={() => alert(`Frais de Mission #${mission.id}:\n- Barème JF (2000 DA/j)\n- Barème Nuitée (800 DA/n)\nTotal Calculé: ${calculateMissionExpenses(mission.dateStart, mission.dateEnd)} DA`)}
+                                                        className="btn btn-sm btn-outline-warning text-dark d-flex align-items-center gap-1"
+                                                        title="Consulter Frais de Mission"
+                                                    >
+                                                        <DollarSign size={14} /> Frais
+                                                    </button>
                                                 </div>
                                             </td>
                                         </tr>
