@@ -240,8 +240,8 @@ export const AppProvider = ({ children }) => {
                     localStorage.setItem('missiondz_expenses', JSON.stringify(data.expenses));
                 }
 
-                // Trigger background logic after loading data
-                checkMissionDeadlines();
+                // Trigger background logic after loading data with FRESH missions
+                checkMissionDeadlines(sanitizedMissions);
             }
         } catch (err) {
             console.error("Erreur de synchronisation avec le serveur.");
@@ -747,9 +747,12 @@ Lien de validation : https://esclab-academy.com/missions/
         deleteFromServer('delete_expense', id);
     };
 
-    const checkMissionDeadlines = () => {
+    const checkMissionDeadlines = (specificMissions = null) => {
         const now = new Date();
-        let missionsUpdate = [...missions];
+        const targetMissions = specificMissions || missions;
+        if (!targetMissions || targetMissions.length === 0) return;
+
+        let missionsUpdate = [...targetMissions];
         let newMessages = [];
         let hasUpdates = false;
 
@@ -765,9 +768,10 @@ Lien de validation : https://esclab-academy.com/missions/
 
                 if (diffMinutes >= 60 && !reminders.h1) {
                     const owner = usersDb.find(u => u.id === (m.userId || m.userIds?.[0]));
+                    const destinations = (m.destinations || [m.destination || 'Destination inconnue']).join(', ');
                     notifyAdmins(
                         "Rappel : Mission en attente de validation (+60 min)",
-                        `La mission de ${owner?.name || 'Collaborateur'} vers ${m.destination} créée le ${m.createdAt} est toujours en attente de validation.`,
+                        `La mission de ${owner?.name || 'Collaborateur'} vers ${destinations} créée le ${m.createdAt} est toujours en attente de validation.`,
                         owner?.department
                     );
                     reminders.h1 = true;
@@ -783,10 +787,11 @@ Lien de validation : https://esclab-academy.com/missions/
                 const diffHours = diffMs / (1000 * 60 * 60);
 
                 if (diffHours >= 24 && !reminders.h24) {
+                    const destinations = (m.destinations || [m.destination || 'Destination inconnue']).join(', ');
                     newMessages.push({
                         toUserId: m.userId,
                         subject: "Rappel : Mission à clôturer",
-                        content: `Votre mission à ${m.destination} (fin le ${m.dateEnd}) n'est pas clôturée. Veuillez déposer votre compte rendu.`
+                        content: `Votre mission à ${destinations} (fin le ${m.dateEnd}) n'est pas clôturée. Veuillez déposer votre compte rendu.`
                     });
                     reminders.h24 = true;
                     changed = true;
@@ -796,11 +801,12 @@ Lien de validation : https://esclab-academy.com/missions/
                     const employee = usersDb.find(u => u.id === m.userId);
                     if (employee) {
                         const admins = usersDb.filter(u => ['SUPER_ADMIN', 'ADMIN'].includes(u.role));
+                        const destinations = (m.destinations || [m.destination || 'Destination inconnue']).join(', ');
                         admins.forEach(recipient => {
                             newMessages.push({
                                 toUserId: recipient.id,
                                 subject: "Escalade : Mission non clôturée",
-                                content: `Le collaborateur ${employee.name} n'a pas clôturé sa mission à ${m.destination} (fin le ${m.dateEnd}).`
+                                content: `Le collaborateur ${employee.name} n'a pas clôturé sa mission à ${destinations} (fin le ${m.dateEnd}).`
                             });
                         });
                     }
@@ -811,11 +817,12 @@ Lien de validation : https://esclab-academy.com/missions/
                 if (diffHours >= 48 && !reminders.h48) {
                     const superAdmins = usersDb.filter(u => u.role === 'SUPER_ADMIN');
                     const employee = usersDb.find(u => u.id === m.userId);
+                    const destinations = (m.destinations || [m.destination || 'Destination inconnue']).join(', ');
                     superAdmins.forEach(admin => {
                         newMessages.push({
                             toUserId: admin.id,
                             subject: "ALERTE : Retard Clôture Mission",
-                            content: `ALERTE : La mission de ${employee?.name || 'Inconnu'} à ${m.destination} dépasse les 48h de retard de clôture.`
+                            content: `ALERTE : La mission de ${employee?.name || 'Inconnu'} à ${destinations} dépasse les 48h de retard de clôture.`
                         });
                     });
                     reminders.h48 = true;
@@ -839,9 +846,10 @@ Lien de validation : https://esclab-academy.com/missions/
                 // On ne veut save que celles qui ont changé
             });
             // Correction : On ne save que les missions qui ont REELLEMENT changé dans ce tour
-            missions.forEach((oldM, idx) => {
-                if (JSON.stringify(oldM.reminders) !== JSON.stringify(missionsUpdate[idx].reminders)) {
-                    saveToServer('save_mission', missionsUpdate[idx]);
+            missionsUpdate.forEach((newM, idx) => {
+                const oldM = targetMissions[idx];
+                if (oldM && JSON.stringify(oldM.reminders) !== JSON.stringify(newM.reminders)) {
+                    saveToServer('save_mission', newM);
                 }
             });
 
