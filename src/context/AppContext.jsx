@@ -247,6 +247,7 @@ export const AppProvider = ({ children }) => {
                 if (Array.isArray(data.messages)) {
                     setMessagesDb(data.messages);
                     try {
+                        localStorage.removeItem('missiondz_messages');
                         localStorage.setItem('missiondz_messages', JSON.stringify(data.messages.slice(-100))); 
                     } catch (e) {
                         console.warn("Could not save messages to localStorage:", e);
@@ -277,7 +278,16 @@ export const AppProvider = ({ children }) => {
         const interval = setInterval(() => {
             loadFromServer();
         }, 30000); // 30 secondes
-        return () => clearInterval(interval);
+
+        // Safety timeout to ensure loading screen disappears even if sync hangs
+        const safetyTimer = setTimeout(() => {
+            setIsInitialLoad(false);
+        }, 8000);
+
+        return () => {
+            clearInterval(interval);
+            clearTimeout(safetyTimer);
+        };
     }, []);
 
 
