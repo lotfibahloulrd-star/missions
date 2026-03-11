@@ -20,12 +20,6 @@ const MissionForm = () => {
     const { addMission, updateMission, usersDb, user, missions, globalSettings, calculateMissionExpenses } = useAppContext();
     const [totalFrais, setTotalFrais] = useState(0);
 
-    useEffect(() => {
-        if (formData.dateStart && formData.dateEnd) {
-            setTotalFrais(calculateMissionExpenses(formData.dateStart, formData.dateEnd));
-        }
-    }, [formData.dateStart, formData.dateEnd, calculateMissionExpenses]);
-
     // Check if we are editing (via URL state)
     const editingId = new URLSearchParams(window.location.search).get('edit');
     const existingMission = editingId ? missions.find(m => m.id === parseInt(editingId)) : null;
@@ -44,6 +38,13 @@ const MissionForm = () => {
         clients: [{ name: '', contact: '', region: '' }]
     });
 
+    useEffect(() => {
+        if (formData.dateStart && formData.dateEnd) {
+            setTotalFrais(calculateMissionExpenses(formData.dateStart, formData.dateEnd));
+        }
+    }, [formData.dateStart, formData.dateEnd, calculateMissionExpenses]);
+
+
     const handleSubmit = (e) => {
         e.preventDefault();
 
@@ -56,7 +57,8 @@ const MissionForm = () => {
         // Prepare submission data
         const submissionData = {
             ...formData,
-            userId: user.id, // Explicitly set the initiator ID
+            userId: user.id,
+            userIds: Array.from(new Set([user.id, ...(formData.userIds || [])])).filter(Boolean)
         };
 
         if (editingId) {
@@ -97,7 +99,7 @@ const MissionForm = () => {
 
     const updateClient = (index, field, value) => {
         const newClients = [...formData.clients];
-        newClients[index][field] = value;
+        newClients[index] = { ...newClients[index], [field]: value };
         setFormData({ ...formData, clients: newClients });
     };
 

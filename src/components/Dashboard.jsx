@@ -21,7 +21,7 @@ const StatCard = ({ title, value, icon: Icon, colorClass, bgClass }) => (
 );
 
 const Dashboard = () => {
-    const { user, missions, messagesDb, markMessageAsRead } = useAppContext();
+    const { user, missions, messagesDb, markMessageAsRead, calculateMissionExpenses } = useAppContext();
     const myMessages = messagesDb.filter(m => m.toUserId === user.id);
     const activeMissions = missions.filter(m => m.status === 'Validée').length;
     const pendingMissions = missions.filter(m => m.status === 'En Attente').length;
@@ -125,7 +125,8 @@ const Dashboard = () => {
                                 <tr key={mission.id}>
                                     <td className="ps-4 fw-medium">{(mission.destinations || [mission.destination || 'N/A']).join(', ')}</td>
                                     <td className="text-muted">{mission.dateStart} au {mission.dateEnd}</td>
-                                    <td className="fw-bold text-dark">{mission.budget ? mission.budget.toLocaleString() : '0'} DA</td>
+                                    <td className="fw-bold text-dark">{calculateMissionExpenses(mission.dateStart, mission.dateEnd).toLocaleString()} DA</td>
+
                                     <td className="pe-4">
                                         <span className={`badge rounded-pill ${mission.status === 'Validée' ? 'bg-success' : 'bg-warning text-dark'
                                             }`}>
