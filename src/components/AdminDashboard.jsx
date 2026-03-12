@@ -38,7 +38,12 @@ const AdminDashboard = () => {
         return d.getMonth() === currentMonth && d.getFullYear() === now.getFullYear();
     });
 
-    const monthlyBudget = monthlyMissions.reduce((acc, m) => acc + calculateMissionExpenses(m.dateStart, m.dateEnd), 0);
+    const monthlyBudget = monthlyMissions.reduce((acc, m) => {
+        const indemnity = (m.reportData?.manualIndemnity !== undefined && m.reportData?.manualIndemnity !== null)
+            ? parseFloat(m.reportData.manualIndemnity)
+            : calculateMissionExpenses(m.dateStart, m.dateEnd);
+        return acc + indemnity;
+    }, 0);
     const missionsByDept = monthlyMissions.reduce((acc, m) => {
         const ownerId = m.userId || m.userIds?.[0];
         const emp = usersDb.find(u => u.id === ownerId);
@@ -111,6 +116,51 @@ const AdminDashboard = () => {
         setShowUserForm(false);
     };
 
+    const exportMonthlyExpenses = () => {
+        if (monthlyMissions.length === 0) {
+            alert("Aucune mission à exporter pour ce mois-ci.");
+            return;
+        }
+
+        const headers = ["ID", "Initiateur", "Departement", "Destinations", "Date Debut", "Date Fin", "Statut", "Frais Mission (DA)", "Avance (DA)", "Frais Divers (DA)", "Observation"];
+        const rows = monthlyMissions.map(m => {
+            const owner = usersDb.find(u => u.id === (m.userId || m.userIds?.[0]));
+            const indemnity = (m.reportData?.manualIndemnity !== undefined && m.reportData?.manualIndemnity !== null)
+                ? parseFloat(m.reportData.manualIndemnity)
+                : calculateMissionExpenses(m.dateStart, m.dateEnd);
+            const divers = parseFloat(m.reportData?.divers?.frais || 0);
+            const avance = parseFloat(m.reportData?.avance || 0);
+            const obs = (m.reportData?.observation || '').replace(/,/g, ';').replace(/\n/g, ' ');
+
+            return [
+                m.id,
+                owner?.name || 'N/A',
+                owner?.department || 'N/A',
+                (m.destinations || [m.destination]).join('; '),
+                m.dateStart,
+                m.dateEnd,
+                m.status,
+                indemnity,
+                avance,
+                divers,
+                obs
+            ];
+        });
+
+        const csvContent = "\uFEFF" + headers.join(",") + "\n"
+            + rows.map(e => e.map(val => `"${val}"`).join(",")).join("\n");
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `missions_frais_${currentMonthLabel.replace(/ /g, '_')}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+
     return (
         <div className="container-fluid p-0">
             <div className="d-flex justify-content-between align-items-center mb-4">
@@ -145,13 +195,23 @@ const AdminDashboard = () => {
                         </button>
                     )}
                     {isBoss && (
-                        <button
-                            onClick={() => setActiveTab('analytics')}
-                            className={`btn btn-outline-primary d-flex align-items-center gap-2 ${activeTab === 'analytics' ? 'active' : ''}`}
-                        >
-                            <TrendingUp size={18} /> Récap Mensuel
-                        </button>
+                        <div className="btn-group">
+                            <button
+                                onClick={() => setActiveTab('analytics')}
+                                className={`btn btn-outline-primary d-flex align-items-center gap-2 ${activeTab === 'analytics' ? 'active' : ''}`}
+                            >
+                                <TrendingUp size={18} /> Récap Mensuel
+                            </button>
+                            <button
+                                onClick={exportMonthlyExpenses}
+                                className="btn btn-outline-success d-flex align-items-center gap-2"
+                                title="Exporter les frais du mois en CSV"
+                            >
+                                <Download size={18} /> Exporter
+                            </button>
+                        </div>
                     )}
+
                 </div>
             </div>
 
@@ -807,6 +867,9 @@ const AdminDashboard = () => {
                                         const ownerId = m.userId || m.userIds?.[0];
                                         const emp = usersDb.find(u => u.id === ownerId);
                                         const destinations = m.destinations || [m.destination];
+                                        const indemnity = (m.reportData?.manualIndemnity !== undefined && m.reportData?.manualIndemnity !== null)
+                                            ? parseFloat(m.reportData.manualIndemnity)
+                                            : calculateMissionExpenses(m.dateStart, m.dateEnd);
                                         return (
                                             <tr key={m.id}>
                                                 <td className="ps-4">
@@ -814,10 +877,11 @@ const AdminDashboard = () => {
                                                     <div className="text-muted small" style={{ fontSize: '0.7rem' }}>{emp?.department}</div>
                                                 </td>
                                                 <td><span className="small">{destinations.join(' • ')}</span></td>
-                                                <td className="fw-bold">{m.budget?.toLocaleString()} DA</td>
+                                                <td className="fw-bold">{indemnity.toLocaleString()} DA</td>
                                                 <td className="small text-muted">{m.dateStart} - {m.dateEnd}</td>
                                             </tr>
                                         );
+
                                     })}
                                 </tbody>
                             </table>

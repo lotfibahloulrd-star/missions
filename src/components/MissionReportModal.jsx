@@ -17,6 +17,7 @@ const MissionReportModal = ({ mission, onClose, onSave }) => {
         repas: { frais: 0 },
         divers: { frais: 0 },
         avance: 0,
+        manualIndemnity: null, // Si null, on utilise le calcul automatique
         observation: ''
     });
 
@@ -33,6 +34,8 @@ const MissionReportModal = ({ mission, onClose, onSave }) => {
     };
 
     const { days: missionDurationDays, nights: missionDurationNights } = calculateDurations();
+    const autoIndemnity = (missionDurationDays * 2000) + (missionDurationNights * 800);
+    const finalIndemnity = formData.manualIndemnity !== null ? parseFloat(formData.manualIndemnity) : autoIndemnity;
 
     useEffect(() => {
         if (mission.reportData) {
@@ -69,6 +72,8 @@ const MissionReportModal = ({ mission, onClose, onSave }) => {
 
         onClose();
     };
+
+    const showManualOverride = user.id === 3 || user.role === 'SUPER_ADMIN';
 
     return (
         <div
@@ -138,13 +143,35 @@ const MissionReportModal = ({ mission, onClose, onSave }) => {
                                     </div>
                                 </div>
                                 <div className="col-md-4">
-                                    <div className="p-2 bg-primary text-white rounded shadow-sm d-flex flex-column justify-content-center">
-                                        <div className="small text-white-50 text-uppercase fw-bold" style={{ fontSize: '0.65rem' }}>Total Indemnités</div>
-                                        <div className="fs-4 fw-bold">{(missionDurationDays * 2000 + missionDurationNights * 800).toLocaleString()} DA</div>
+                                    <div className={`p-2 rounded shadow-sm d-flex flex-column justify-content-center ${formData.manualIndemnity !== null ? 'bg-warning text-dark' : 'bg-primary text-white'}`}>
+                                        <div className={`small text-uppercase fw-bold ${formData.manualIndemnity !== null ? 'text-dark-50' : 'text-white-50'}`} style={{ fontSize: '0.65rem' }}>
+                                            {formData.manualIndemnity !== null ? 'Total Corrigé' : 'Total Indemnités'}
+                                        </div>
+                                        <div className="fs-4 fw-bold">{finalIndemnity.toLocaleString()} DA</div>
                                     </div>
                                 </div>
+
+                                {showManualOverride && (
+                                    <div className="col-12">
+                                        <div className="p-2 bg-white rounded border border-warning">
+                                            <label className="form-label small fw-bold text-warning-emphasis">Correction Manuelle du Montant (Optionnel pour RH)</label>
+                                            <div className="d-flex gap-2">
+                                                <input
+                                                    type="number"
+                                                    className="form-control form-control-sm"
+                                                    placeholder="Laissez vide pour le calcul automatique"
+                                                    value={formData.manualIndemnity || ''}
+                                                    onChange={e => handleSimpleChange('manualIndemnity', e.target.value || null)}
+                                                />
+                                                <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => handleSimpleChange('manualIndemnity', null)}>Reset</button>
+                                            </div>
+                                            <small className="text-muted mt-1 d-block">Utile pour les cas exceptionnels ou corrections RH.</small>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
+
 
                         {/* SECTION SEJOUR - SIMPLIFIED: ONLY DIVERS/AVANCE/OBSERVATION */}
                         <div className="mb-4">

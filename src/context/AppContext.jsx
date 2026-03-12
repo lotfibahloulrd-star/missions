@@ -538,7 +538,7 @@ Lien de validation : https://esclab-academy.com/missions/
         }
     };
 
-    const saveVisitReport = (missionId, reportText, clients) => {
+    const saveVisitReport = (missionId, reportText, clients, extraInfo = {}) => {
         setMissions(prevMissions => {
             const mission = prevMissions.find(m => m.id === missionId);
             if (!mission) return prevMissions;
@@ -551,6 +551,7 @@ Lien de validation : https://esclab-academy.com/missions/
                     ...m,
                     visitReport: reportText,
                     clients: clients,
+                    ...extraInfo, // departureTime, returnTime, licensePlate, vehicleMake
                     status: 'Attente Validation RH' // New status clearly indicating the waiting step
                 };
                 saveToServer('save_mission', updated);
