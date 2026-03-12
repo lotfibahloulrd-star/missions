@@ -76,7 +76,12 @@ const AdminDashboard = () => {
 
     const totalMissions = relevantMissions.length;
     const pendingValidation = relevantMissions.filter(m => m.status === 'En Attente').length;
-    const totalBudgetParams = allMissions.reduce((acc, curr) => acc + calculateMissionExpenses(curr.dateStart, curr.dateEnd), 0);
+    const totalBudgetParams = allMissions.reduce((acc, curr) => {
+        const indemnity = (curr.reportData?.manualIndemnity !== undefined && curr.reportData?.manualIndemnity !== null)
+            ? parseFloat(curr.reportData.manualIndemnity)
+            : calculateMissionExpenses(curr.dateStart, curr.dateEnd);
+        return acc + indemnity;
+    }, 0);
     const myMessages = messagesDb.filter(m => m.toUserId === user.id);
     const unreadMessages = myMessages.filter(m => !m.read).length;
 
@@ -320,7 +325,10 @@ const AdminDashboard = () => {
                                             </td>
                                             <td className="small text-muted">{mission.dateStart} - {mission.dateEnd}</td>
                                             <td className="fw-bold text-primary">
-                                                {calculateMissionExpenses(mission.dateStart, mission.dateEnd).toLocaleString()} DA
+                                                {((mission.reportData?.manualIndemnity !== undefined && mission.reportData?.manualIndemnity !== null)
+                                                    ? parseFloat(mission.reportData.manualIndemnity)
+                                                    : calculateMissionExpenses(mission.dateStart, mission.dateEnd)).toLocaleString()} DA
+                                                {mission.reportData?.manualIndemnity && <div className="text-muted" style={{ fontSize: '0.6rem' }}>RH</div>}
                                             </td>
                                             <td>
                                                 <span className="badge bg-light text-dark border">
@@ -738,7 +746,12 @@ const AdminDashboard = () => {
                                                     )}
                                                     {/* Display Frais de Mission Button if mission is closed */}
                                                     <button
-                                                        onClick={() => alert(`Frais de Mission #${mission.id}:\n- Barème JF (2000 DA/j)\n- Barème Nuitée (800 DA/n)\nTotal Calculé: ${calculateMissionExpenses(mission.dateStart, mission.dateEnd)} DA`)}
+                                                        onClick={() => {
+                                                            const ind = (mission.reportData?.manualIndemnity !== undefined && mission.reportData?.manualIndemnity !== null)
+                                                                ? parseFloat(mission.reportData.manualIndemnity)
+                                                                : calculateMissionExpenses(mission.dateStart, mission.dateEnd);
+                                                            alert(`Détails Frais de Mission #${mission.id}:\n- Type: ${mission.reportData?.manualIndemnity ? 'Saisie Manuelle RH' : 'Barème Automatique'}\n- Montant: ${ind.toLocaleString()} DA`);
+                                                        }}
                                                         className="btn btn-sm btn-outline-warning text-dark d-flex align-items-center gap-1"
                                                         title="Consulter Frais de Mission"
                                                     >
