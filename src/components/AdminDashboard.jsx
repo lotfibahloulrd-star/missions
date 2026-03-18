@@ -3,15 +3,17 @@ import { useAppContext } from '../context/AppContext';
 import { generateMissionOrder, generateVisitReportPDF } from '../utils/pdfGenerator';
 import { Users, ClipboardCheck, TrendingUp, AlertCircle, UserPlus, Trash2, Mail, CheckCircle, Edit, Save, X, FileText, Download, Archive, Printer, Eye, DollarSign } from 'lucide-react';
 import MissionPreviewModal from './MissionPreviewModal';
+import MissionReportModal from './MissionReportModal';
 import EmployeeMap from './EmployeeMap';
 import { Map as MapIcon, Navigation } from 'lucide-react';
 
 const AdminDashboard = () => {
-    const { user, allMissions, usersDb, updateMissionStatus, validateMissionFinal, addUser, updateUser, deleteUser, messagesDb, markMessageAsRead, deleteMessage, deleteMission, globalSettings, calculateMissionExpenses } = useAppContext();
+    const { user, allMissions, usersDb, updateMissionStatus, validateMissionFinal, addUser, updateUser, deleteUser, messagesDb, markMessageAsRead, deleteMessage, deleteMission, globalSettings, calculateMissionExpenses, saveMissionReport } = useAppContext();
 
     // Form & UI States
     const [userForm, setUserForm] = useState({ name: '', email: '', password: '', role: 'USER', department: 'COMMERCIAL', region: 'Alger', phone: '' });
     const [previewingMission, setPreviewingMission] = useState(null);
+    const [selectedMissionReport, setSelectedMissionReport] = useState(null);
     const [showUserForm, setShowUserForm] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [editingUserId, setEditingUserId] = useState(null);
@@ -353,6 +355,17 @@ const AdminDashboard = () => {
                                                     >
                                                         <Eye size={14} />
                                                     </button>
+
+                                                    {/* New: Quick Edit Amounts for RH (Lamia) and Super Admin */}
+                                                    {['Validée', 'Attente Validation RH', 'Clôturée'].includes(mission.status) && (user.role === 'SUPER_ADMIN' || (user.role === 'ADMIN' && user.department === 'RH')) && (
+                                                        <button
+                                                            onClick={() => setSelectedMissionReport(mission)}
+                                                            className={`btn btn-sm ${mission.reportData ? 'btn-warning text-dark' : 'btn-outline-warning text-dark'}`}
+                                                            title={mission.reportData ? "Consulter/Modifier Frais" : "Saisir Frais de Mission"}
+                                                        >
+                                                            <DollarSign size={14} />
+                                                        </button>
+                                                    )}
 
                                                     {mission.status === 'Attente Validation RH' && (user.role === 'SUPER_ADMIN' || (user.role === 'ADMIN' && user.department === 'RH')) && (
                                                         <button
@@ -916,6 +929,15 @@ const AdminDashboard = () => {
                     canFinalValidate={user.role === 'SUPER_ADMIN' || (user.role === 'ADMIN' && user.department === 'RH')}
                     onReject={(id) => updateMissionStatus(id, 'Rejetée')}
                     onClose={() => setPreviewingMission(null)}
+                    onEditExpenses={(m) => { setSelectedMissionReport(m); setPreviewingMission(null); }}
+                />
+            )}
+            {/* Modal de saisie des frais (RH / Lamia) */}
+            {selectedMissionReport && (
+                <MissionReportModal
+                    mission={selectedMissionReport}
+                    onClose={() => setSelectedMissionReport(null)}
+                    onSave={saveMissionReport}
                 />
             )}
             {/* TAB: MAP / GEOGRAPHIC FOLLOW-UP */}

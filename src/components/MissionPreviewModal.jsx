@@ -1,9 +1,9 @@
 import React, { useEffect } from 'react';
-import { X, Calendar, MapPin, Users, Building, Info, CheckCircle, XCircle, User, FileText, DollarSign } from 'lucide-react';
+import { X, Calendar, MapPin, Users, Building, Info, CheckCircle, XCircle, User, FileText, DollarSign, Edit } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 
-const MissionPreviewModal = ({ mission, employee, participants, onValidate, onFinalValidate, canFinalValidate, onReject, onClose }) => {
-    const { calculateMissionExpenses } = useAppContext();
+const MissionPreviewModal = ({ mission, employee, participants, onValidate, onFinalValidate, canFinalValidate, onReject, onClose, onEditExpenses }) => {
+    const { calculateMissionExpenses, user } = useAppContext();
     const totalFrais = (mission?.reportData?.manualIndemnity !== undefined && mission?.reportData?.manualIndemnity !== null)
         ? parseFloat(mission.reportData.manualIndemnity)
         : calculateMissionExpenses(mission?.dateStart, mission?.dateEnd);
@@ -93,12 +93,23 @@ const MissionPreviewModal = ({ mission, employee, participants, onValidate, onFi
                             </div>
                         </div>
 
-                        <div className="col-12 text-center py-3 bg-primary bg-opacity-10 rounded-3 border border-primary border-opacity-10">
+                        <div className="col-12 text-center py-3 bg-primary bg-opacity-10 rounded-3 border border-primary border-opacity-10 position-relative">
                             <div className="h4 fw-bold text-primary mb-0">{totalFrais.toLocaleString()} DA</div>
                             <small className="text-muted text-uppercase fw-bold" style={{ fontSize: '0.7rem' }}>
                                 Frais de Mission {mission.reportData?.manualIndemnity ? '(Saisie Manuelle RH)' : '(Barème Forfaitaire)'}
                             </small>
                             {!mission.reportData?.manualIndemnity && <div className="text-muted mt-1" style={{ fontSize: '0.65rem' }}>Barème : 2000 DA/jour + 800 DA/nuitée</div>}
+                            
+                            {/* Lamia / RH shortcut to edit amounts */}
+                            {onEditExpenses && (user?.id === 3 || user?.role === 'SUPER_ADMIN' || (user?.role === 'ADMIN' && user?.department === 'RH')) && (
+                                <button 
+                                    onClick={(e) => { e.stopPropagation(); onEditExpenses(mission); }}
+                                    className="btn btn-sm btn-link text-primary position-absolute top-0 end-0 mt-1 me-1 p-1"
+                                    title="Modifier les montants (RH)"
+                                >
+                                    <Edit size={16} />
+                                </button>
+                            )}
                         </div>
 
                         {mission.visitReport && (

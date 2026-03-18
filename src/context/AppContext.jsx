@@ -880,6 +880,7 @@ Lien de validation : https://esclab-academy.com/missions/
             updateMission,
             updateMissionStatus,
             deleteMission,
+            saveMissionReport,
             saveMissionExpenses: saveMissionReport, // Rename internally exposed but keep function for now
             calculateMissionExpenses,
             shareReport,

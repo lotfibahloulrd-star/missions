@@ -371,6 +371,7 @@ const MissionList = ({ type = 'my' }) => {
                     canFinalValidate={currentUser.role === 'SUPER_ADMIN' || (currentUser.role === 'ADMIN' && currentUser.department === 'RH')}
                     onReject={(id) => updateMissionStatus(id, 'Rejetée')}
                     onClose={() => setPreviewingMission(null)}
+                    onEditExpenses={(m) => { setSelectedMission(m); setPreviewingMission(null); }}
                 />
             )}
         </div>
