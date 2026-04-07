@@ -288,7 +288,7 @@ const AdminDashboard = () => {
                                     <th className="ps-4">Employé</th>
                                     <th>Destination</th>
                                     <th>Dates</th>
-                                    <th>Frais (Barème)</th>
+                                    {isSuperAdmin && <th>Frais (Barème)</th>}
                                     <th>Justificatif</th>
                                     <th>Statut</th>
                                     <th className="text-end pe-4">Action</th>
@@ -326,12 +326,14 @@ const AdminDashboard = () => {
                                                 </span>
                                             </td>
                                             <td className="small text-muted">{mission.dateStart} - {mission.dateEnd}</td>
-                                            <td className="fw-bold text-primary">
-                                                {((mission.reportData?.manualIndemnity !== undefined && mission.reportData?.manualIndemnity !== null)
-                                                    ? parseFloat(mission.reportData.manualIndemnity)
-                                                    : calculateMissionExpenses(mission.dateStart, mission.dateEnd)).toLocaleString()} DA
-                                                {mission.reportData?.manualIndemnity && <div className="text-muted" style={{ fontSize: '0.6rem' }}>RH</div>}
-                                            </td>
+                                            {isSuperAdmin && (
+                                                <td className="fw-bold text-primary">
+                                                    {((mission.reportData?.manualIndemnity !== undefined && mission.reportData?.manualIndemnity !== null)
+                                                        ? parseFloat(mission.reportData.manualIndemnity)
+                                                        : calculateMissionExpenses(mission.dateStart, mission.dateEnd)).toLocaleString()} DA
+                                                    {mission.reportData?.manualIndemnity && <div className="text-muted" style={{ fontSize: '0.6rem' }}>RH</div>}
+                                                </td>
+                                            )}
                                             <td>
                                                 <span className="badge bg-light text-dark border">
                                                     {mission.visitReport ? '📄 Rapport Présent' : '⏳ En attente'}
@@ -757,19 +759,21 @@ const AdminDashboard = () => {
                                                     ) : (
                                                         <span className="text-muted small fst-italic ms-2">Pas de rapport</span>
                                                     )}
-                                                    {/* Display Frais de Mission Button if mission is closed */}
-                                                    <button
-                                                        onClick={() => {
-                                                            const ind = (mission.reportData?.manualIndemnity !== undefined && mission.reportData?.manualIndemnity !== null)
-                                                                ? parseFloat(mission.reportData.manualIndemnity)
-                                                                : calculateMissionExpenses(mission.dateStart, mission.dateEnd);
-                                                            alert(`Détails Frais de Mission #${mission.id}:\n- Type: ${mission.reportData?.manualIndemnity ? 'Saisie Manuelle RH' : 'Barème Automatique'}\n- Montant: ${ind.toLocaleString()} DA`);
-                                                        }}
-                                                        className="btn btn-sm btn-outline-warning text-dark d-flex align-items-center gap-1"
-                                                        title="Consulter Frais de Mission"
-                                                    >
-                                                        <DollarSign size={14} /> Frais
-                                                    </button>
+                                                    {/* Display Frais de Mission Button if mission is closed and user is SuperAdmin/RH */}
+                                                    {isSuperAdmin && (
+                                                        <button
+                                                            onClick={() => {
+                                                                const ind = (mission.reportData?.manualIndemnity !== undefined && mission.reportData?.manualIndemnity !== null)
+                                                                    ? parseFloat(mission.reportData.manualIndemnity)
+                                                                    : calculateMissionExpenses(mission.dateStart, mission.dateEnd);
+                                                                alert(`Détails Frais de Mission #${mission.id}:\n- Type: ${mission.reportData?.manualIndemnity ? 'Saisie Manuelle RH' : 'Barème Automatique'}\n- Montant: ${ind.toLocaleString()} DA`);
+                                                            }}
+                                                            className="btn btn-sm btn-outline-warning text-dark d-flex align-items-center gap-1"
+                                                            title="Consulter Frais de Mission"
+                                                        >
+                                                            <DollarSign size={14} /> Frais
+                                                        </button>
+                                                    )}
                                                 </div>
                                             </td>
                                         </tr>

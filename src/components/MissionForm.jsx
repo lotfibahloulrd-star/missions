@@ -221,11 +221,13 @@ const MissionForm = () => {
                                             <option value="personnel">Véhicule Personnel</option>
                                             <option value="transport">Transport Public (Taxi/Train/Avion)</option>
                                         </select>
-                                        <div className="mt-3 p-3 bg-primary bg-opacity-10 rounded border border-primary border-opacity-10 text-center">
-                                            <div className="small text-muted text-uppercase fw-bold" style={{ fontSize: '0.65rem' }}>Estimation Frais de Mission (Barème)</div>
-                                            <div className="h4 fw-bold text-primary mb-0">{totalFrais.toLocaleString()} DA</div>
-                                            <div className="text-muted" style={{ fontSize: '0.6rem' }}>2000 DA/jour + 800 DA/nuitée</div>
-                                        </div>
+                                        {(user?.role === 'SUPER_ADMIN' || (user?.role === 'ADMIN' && user?.department === 'RH')) && (
+                                            <div className="mt-3 p-3 bg-primary bg-opacity-10 rounded border border-primary border-opacity-10 text-center">
+                                                <div className="small text-muted text-uppercase fw-bold" style={{ fontSize: '0.65rem' }}>Estimation Frais de Mission (Barème)</div>
+                                                <div className="h4 fw-bold text-primary mb-0">{totalFrais.toLocaleString()} DA</div>
+                                                <div className="text-muted" style={{ fontSize: '0.6rem' }}>2000 DA/jour + 800 DA/nuitée</div>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>

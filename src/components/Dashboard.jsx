@@ -116,7 +116,7 @@ const Dashboard = () => {
                             <tr>
                                 <th className="py-3 ps-4">Destination</th>
                                 <th className="py-3">Période</th>
-                                <th className="py-3">Budget</th>
+                                {((user.role === 'SUPER_ADMIN') || (user.role === 'ADMIN' && user.department === 'RH')) && <th className="py-3">Budget</th>}
                                 <th className="py-3 pe-4">Statut</th>
                             </tr>
                         </thead>
@@ -125,7 +125,9 @@ const Dashboard = () => {
                                 <tr key={mission.id}>
                                     <td className="ps-4 fw-medium">{(mission.destinations || [mission.destination || 'N/A']).join(', ')}</td>
                                     <td className="text-muted">{mission.dateStart} au {mission.dateEnd}</td>
-                                    <td className="fw-bold text-dark">{calculateMissionExpenses(mission.dateStart, mission.dateEnd).toLocaleString()} DA</td>
+                                    {((user.role === 'SUPER_ADMIN') || (user.role === 'ADMIN' && user.department === 'RH')) && (
+                                        <td className="fw-bold text-dark">{calculateMissionExpenses(mission.dateStart, mission.dateEnd).toLocaleString()} DA</td>
+                                    )}
 
                                     <td className="pe-4">
                                         <span className={`badge rounded-pill ${mission.status === 'Validée' ? 'bg-success' : 'bg-warning text-dark'

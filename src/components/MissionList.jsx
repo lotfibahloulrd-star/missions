@@ -143,12 +143,16 @@ const MissionList = ({ type = 'my' }) => {
                                     </div>
 
                                     <div className="text-end ps-lg-4 border-lg-start" style={{ minWidth: '180px' }}>
-                                        <div className="h4 fw-bold mb-0 text-primary" title={`Barème : 2000 DA/j + 800 DA/n`}>
-                                            {(mission.reportData?.manualIndemnity !== undefined && mission.reportData?.manualIndemnity !== null)
-                                                ? parseFloat(mission.reportData.manualIndemnity).toLocaleString()
-                                                : calculateMissionExpenses(mission.dateStart, mission.dateEnd).toLocaleString()} <small className="fs-6 text-muted">DA</small>
-                                        </div>
-                                        <small className="text-muted text-uppercase fw-semibold d-block mb-3" style={{ fontSize: '0.7rem' }}>Frais de Mission {mission.reportData?.manualIndemnity ? '(RH)' : '(Forfait)'}</small>
+                                        {(currentUser.role === 'SUPER_ADMIN' || (currentUser.role === 'ADMIN' && currentUser.department === 'RH')) && (
+                                            <>
+                                                <div className="h4 fw-bold mb-0 text-primary" title={`Barème : 2000 DA/j + 800 DA/n`}>
+                                                    {(mission.reportData?.manualIndemnity !== undefined && mission.reportData?.manualIndemnity !== null)
+                                                        ? parseFloat(mission.reportData.manualIndemnity).toLocaleString()
+                                                        : calculateMissionExpenses(mission.dateStart, mission.dateEnd).toLocaleString()} <small className="fs-6 text-muted">DA</small>
+                                                </div>
+                                                <small className="text-muted text-uppercase fw-semibold d-block mb-3" style={{ fontSize: '0.7rem' }}>Frais de Mission {mission.reportData?.manualIndemnity ? '(RH)' : '(Forfait)'}</small>
+                                            </>
+                                        )}
 
 
                                         <div className="d-flex gap-2 justify-content-end flex-wrap">
