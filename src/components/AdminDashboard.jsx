@@ -18,11 +18,63 @@ const AdminDashboard = () => {
     const [isEditing, setIsEditing] = useState(false);
     const [editingUserId, setEditingUserId] = useState(null);
     const [activeTab, setActiveTab] = useState('missions'); // 'missions', 'messages', 'team', 'analytics', 'archive', 'map'
+    const [analyticsSubTab, setAnalyticsSubTab] = useState('dashboard'); // 'dashboard' or 'archive'
 
-    // Monthly Analytics Logic
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentMonthLabel = now.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+    // Dynamic Month Selection
+    const [selectedMonth, setSelectedMonth] = useState(() => {
+        const now = new Date();
+        return {
+            month: now.getMonth(),
+            year: now.getFullYear()
+        };
+    });
+
+    const getMonthsSinceStart = () => {
+        const months = [];
+        let startYear = 2024;
+        let startMonth = 1; // Février (0-indexed)
+
+        // Trouver la date de mission la plus ancienne
+        if (allMissions && allMissions.length > 0) {
+            let earliestDate = null;
+            allMissions.forEach(m => {
+                if (m.dateStart) {
+                    const d = new Date(m.dateStart);
+                    if (!isNaN(d.getTime())) {
+                        if (!earliestDate || d < earliestDate) {
+                            earliestDate = d;
+                        }
+                    }
+                }
+            });
+            if (earliestDate) {
+                startYear = earliestDate.getFullYear();
+                startMonth = earliestDate.getMonth();
+            }
+        }
+
+        const now = new Date();
+        const endYear = now.getFullYear();
+        const endMonth = now.getMonth();
+
+        let currentY = startYear;
+        let currentM = startMonth;
+
+        while (currentY < endYear || (currentY === endYear && currentM <= endMonth)) {
+            months.push({
+                month: currentM,
+                year: currentY,
+                label: new Date(currentY, currentM, 1).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
+            });
+            currentM++;
+            if (currentM > 11) {
+                currentM = 0;
+                currentY++;
+            }
+        }
+
+        return months.reverse();
+    };
 
     const getGroupedMissions = (missionsList) => {
         const groupedMap = new Map();
@@ -36,9 +88,12 @@ const AdminDashboard = () => {
     };
 
     const monthlyMissions = getGroupedMissions(allMissions).filter(m => {
+        if (!m.dateStart) return false;
         const d = new Date(m.dateStart);
-        return d.getMonth() === currentMonth && d.getFullYear() === now.getFullYear();
+        return d.getMonth() === selectedMonth.month && d.getFullYear() === selectedMonth.year;
     });
+
+    const currentMonthLabel = new Date(selectedMonth.year, selectedMonth.month, 1).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
 
     const monthlyBudget = monthlyMissions.reduce((acc, m) => {
         const indemnity = (m.reportData?.manualIndemnity !== undefined && m.reportData?.manualIndemnity !== null)
@@ -123,14 +178,20 @@ const AdminDashboard = () => {
         setShowUserForm(false);
     };
 
-    const exportMonthlyExpenses = () => {
-        if (monthlyMissions.length === 0) {
+    const exportMonthlyExpenses = (targetMonth = selectedMonth) => {
+        const targetMissions = getGroupedMissions(allMissions).filter(m => {
+            if (!m.dateStart) return false;
+            const d = new Date(m.dateStart);
+            return d.getMonth() === targetMonth.month && d.getFullYear() === targetMonth.year;
+        });
+
+        if (targetMissions.length === 0) {
             alert("Aucune mission à exporter pour ce mois-ci.");
             return;
         }
 
         const headers = ["ID", "Initiateur", "Departement", "Destinations", "Date Debut", "Date Fin", "Statut", "Frais Mission (DA)", "Avance (DA)", "Frais Divers (DA)", "Observation"];
-        const rows = monthlyMissions.map(m => {
+        const rows = targetMissions.map(m => {
             const owner = usersDb.find(u => u.id === (m.userId || m.userIds?.[0]));
             const indemnity = (m.reportData?.manualIndemnity !== undefined && m.reportData?.manualIndemnity !== null)
                 ? parseFloat(m.reportData.manualIndemnity)
@@ -157,11 +218,12 @@ const AdminDashboard = () => {
         const csvContent = "\uFEFF" + headers.join(",") + "\n"
             + rows.map(e => e.map(val => `"${val}"`).join(",")).join("\n");
 
+        const targetLabel = new Date(targetMonth.year, targetMonth.month, 1).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.setAttribute("href", url);
-        link.setAttribute("download", `missions_frais_${currentMonthLabel.replace(/ /g, '_')}.csv`);
+        link.setAttribute("download", `missions_frais_${targetLabel.replace(/ /g, '_')}.csv`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -795,128 +857,305 @@ const AdminDashboard = () => {
             {/* TAB: ANALYTICS / MONTHLY RECAP */}
             {activeTab === 'analytics' && isBoss && (
                 <div className="animate-fade-in">
-                    <div className="row g-4 mb-4">
-                        <div className="col-md-6">
-                            <div className="card border-0 shadow-sm h-100 overflow-hidden">
-                                <div className="card-header bg-white py-3 border-0">
-                                    <h6 className="mb-0 fw-bold text-dark d-flex align-items-center gap-2">
-                                        <TrendingUp size={18} className="text-primary" />
-                                        Répartition par Département ({currentMonthLabel})
-                                    </h6>
+                    {/* Sub-tabs Navigation */}
+                    <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4 pb-3 border-bottom">
+                        <div className="nav nav-pills gap-2 bg-light p-1 rounded" style={{ alignSelf: 'flex-start' }}>
+                            <button
+                                className={`nav-link px-3 py-2 fw-medium d-flex align-items-center gap-2 border-0 ${analyticsSubTab === 'dashboard' ? 'active shadow-sm bg-white text-primary' : 'text-secondary bg-transparent'}`}
+                                onClick={() => setAnalyticsSubTab('dashboard')}
+                                style={{ transition: 'all 0.2s' }}
+                            >
+                                <TrendingUp size={16} />
+                                Tableau de Bord Mensuel
+                            </button>
+                            <button
+                                className={`nav-link px-3 py-2 fw-medium d-flex align-items-center gap-2 border-0 ${analyticsSubTab === 'archive' ? 'active shadow-sm bg-white text-primary' : 'text-secondary bg-transparent'}`}
+                                onClick={() => setAnalyticsSubTab('archive')}
+                                style={{ transition: 'all 0.2s' }}
+                            >
+                                <Archive size={16} />
+                                Archive des Récaps
+                            </button>
+                        </div>
+
+                        {analyticsSubTab === 'dashboard' && (
+                            <div className="d-flex flex-wrap align-items-center gap-3">
+                                {/* Month Selector */}
+                                <div className="d-flex align-items-center gap-2">
+                                    <span className="small fw-semibold text-muted text-nowrap">Période :</span>
+                                    <select
+                                        className="form-select form-select-sm fw-bold border-dark-subtle cursor-pointer"
+                                        style={{ minWidth: '180px', borderRadius: '8px' }}
+                                        value={`${selectedMonth.year}-${selectedMonth.month}`}
+                                        onChange={(e) => {
+                                            const [y, m] = e.target.value.split('-').map(Number);
+                                            setSelectedMonth({ year: y, month: m });
+                                        }}
+                                    >
+                                        {getMonthsSinceStart().map(m => (
+                                            <option key={`${m.year}-${m.month}`} value={`${m.year}-${m.month}`}>
+                                                {m.label.charAt(0).toUpperCase() + m.label.slice(1)}
+                                            </option>
+                                        ))}
+                                    </select>
                                 </div>
-                                <div className="card-body p-4 pt-2">
-                                    <div className="d-flex flex-column gap-4 mt-2">
-                                        {Object.entries(missionsByDept).sort((a, b) => b[1] - a[1]).map(([dept, count], idx) => {
-                                            const colors = ['#0d6efd', '#6610f2', '#6f42c1', '#d63384', '#fd7e14', '#ffc107', '#198754', '#20c997', '#0dcaf0'];
-                                            const color = colors[idx % colors.length];
-                                            const percentage = (count / monthlyMissions.length) * 100;
+                                
+                                {/* Export CSV button */}
+                                <button
+                                    onClick={() => exportMonthlyExpenses(selectedMonth)}
+                                    className="btn btn-sm btn-success d-flex align-items-center gap-2 px-3"
+                                    style={{ borderRadius: '8px' }}
+                                    title="Exporter ce mois en CSV"
+                                    disabled={monthlyMissions.length === 0}
+                                >
+                                    <Download size={16} />
+                                    Exporter CSV
+                                </button>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* SUB-TAB: MONTHLY DASHBOARD */}
+                    {analyticsSubTab === 'dashboard' && (
+                        <div className="animate-fade-in">
+                            <div className="row g-4 mb-4">
+                                <div className="col-md-6">
+                                    <div className="card border-0 shadow-sm h-100 overflow-hidden">
+                                        <div className="card-header bg-white py-3 border-0">
+                                            <h6 className="mb-0 fw-bold text-dark d-flex align-items-center gap-2">
+                                                <TrendingUp size={18} className="text-primary" />
+                                                Répartition par Département ({currentMonthLabel})
+                                            </h6>
+                                        </div>
+                                        <div className="card-body p-4 pt-2">
+                                            <div className="d-flex flex-column gap-4 mt-2">
+                                                {Object.entries(missionsByDept).sort((a, b) => b[1] - a[1]).map(([dept, count], idx) => {
+                                                    const colors = ['#0d6efd', '#6610f2', '#6f42c1', '#d63384', '#fd7e14', '#ffc107', '#198754', '#20c997', '#0dcaf0'];
+                                                    const color = colors[idx % colors.length];
+                                                    const percentage = (count / monthlyMissions.length) * 100;
+
+                                                    return (
+                                                        <div key={dept} className="group">
+                                                            <div className="d-flex justify-content-between align-items-end mb-2">
+                                                                <div>
+                                                                    <span className="fw-bold d-block text-dark small" style={{ letterSpacing: '0.3px' }}>{dept}</span>
+                                                                    <small className="text-muted" style={{ fontSize: '0.65rem' }}>{Math.round(percentage)}% de l'activité globale</small>
+                                                                </div>
+                                                                <div className="text-end">
+                                                                    <span className="h5 fw-bold mb-0" style={{ color: color }}>{count}</span>
+                                                                    <small className="text-muted ms-1 small">missions</small>
+                                                                </div>
+                                                            </div>
+                                                            <div className="progress overflow-visible" style={{ height: '10px', backgroundColor: '#f0f2f5', borderRadius: '20px' }}>
+                                                                <div
+                                                                    className="progress-bar"
+                                                                    style={{
+                                                                        width: `${percentage}%`,
+                                                                        backgroundColor: color,
+                                                                        borderRadius: '20px',
+                                                                        boxShadow: `0 4px 12px ${color}44`,
+                                                                        transition: 'width 1s cubic-bezier(0.1, 0.5, 0.5, 1.0)'
+                                                                    }}
+                                                                ></div>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                                {Object.keys(missionsByDept).length === 0 && (
+                                                    <div className="text-center py-5">
+                                                        <div className="bg-light rounded-circle p-3 d-inline-block mb-3">
+                                                            <AlertCircle size={32} className="text-muted opacity-50" />
+                                                        </div>
+                                                        <p className="text-muted fw-medium py-0 mb-0">Aucune donnée pour ce mois-ci.</p>
+                                                        <small className="text-muted small">Les statistiques apparaîtront après validation des premières missions.</small>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="col-md-6">
+                                    <div className="card border-0 shadow-sm h-100">
+                                        <div className="card-header bg-white py-3">
+                                            <h6 className="mb-0 fw-bold text-success">Indicateurs de Performance ({currentMonthLabel})</h6>
+                                        </div>
+                                        <div className="card-body">
+                                            <div className="list-group list-group-flush">
+                                                <div className="list-group-item px-0 py-3 d-flex justify-content-between align-items-center">
+                                                    <div>
+                                                        <div className="fw-bold">Budget Global Consommé</div>
+                                                        <small className="text-muted">Total des budgets estimés pour {currentMonthLabel}</small>
+                                                    </div>
+                                                    <div className="h4 fw-bold text-success mb-0">{monthlyBudget.toLocaleString()} DA</div>
+                                                </div>
+                                                <div className="list-group-item px-0 py-3 d-flex justify-content-between align-items-center">
+                                                    <div>
+                                                        <div className="fw-bold">Volume de Sorties</div>
+                                                        <small className="text-muted">Nombre total de missions ce mois</small>
+                                                    </div>
+                                                    <div className="h4 fw-bold text-primary mb-0">{monthlyMissions.length}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="card border-0 shadow-sm">
+                                <div className="card-header bg-white py-3">
+                                    <h6 className="mb-0 fw-bold">Détails des Missions du Mois ({currentMonthLabel})</h6>
+                                </div>
+                                <div className="table-responsive">
+                                    <table className="table table-hover align-middle mb-0">
+                                        <thead className="table-light">
+                                            <tr>
+                                                <th className="ps-4">Employé</th>
+                                                <th>Destination</th>
+                                                <th>Budget</th>
+                                                <th>Période</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {monthlyMissions.map(m => {
+                                                const ownerId = m.userId || m.userIds?.[0];
+                                                const emp = usersDb.find(u => u.id === ownerId);
+                                                const destinations = m.destinations || [m.destination];
+                                                const indemnity = (m.reportData?.manualIndemnity !== undefined && m.reportData?.manualIndemnity !== null)
+                                                    ? parseFloat(m.reportData.manualIndemnity)
+                                                    : calculateMissionExpenses(m.dateStart, m.dateEnd);
+                                                return (
+                                                    <tr key={m.id}>
+                                                        <td className="ps-4">
+                                                            <div className="fw-bold small">{emp?.name}</div>
+                                                            <div className="text-muted small" style={{ fontSize: '0.7rem' }}>{emp?.department}</div>
+                                                        </td>
+                                                        <td><span className="small">{destinations.join(' • ')}</span></td>
+                                                        <td className="fw-bold">{indemnity.toLocaleString()} DA</td>
+                                                        <td className="small text-muted">{m.dateStart} - {m.dateEnd}</td>
+                                                    </tr>
+                                                );
+                                            })}
+                                            {monthlyMissions.length === 0 && (
+                                                <tr>
+                                                    <td colSpan="4" className="text-center py-4 text-muted">
+                                                        Aucune mission enregistrée pour cette période.
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* SUB-TAB: HISTORICAL ARCHIVE */}
+                    {analyticsSubTab === 'archive' && (
+                        <div className="card border-0 shadow-sm animate-fade-in">
+                            <div className="card-header bg-white py-3 border-0">
+                                <h5 className="mb-0 fw-bold text-dark d-flex align-items-center gap-2">
+                                    <Archive size={20} className="text-success" />
+                                    Archive Historique des Récaps Mensuels
+                                </h5>
+                                <p className="text-muted small mb-0 mt-1">
+                                    Consultez et exportez les rapports financiers consolidés de chaque mois depuis la création de l'application.
+                                </p>
+                            </div>
+                            <div className="table-responsive">
+                                <table className="table table-hover align-middle mb-0">
+                                    <thead className="table-light">
+                                        <tr>
+                                            <th className="ps-4">Période</th>
+                                            <th>Volume de Sorties</th>
+                                            <th>Budget Consommé</th>
+                                            <th>Départements Actifs</th>
+                                            <th className="text-end pe-4">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {getMonthsSinceStart().map(m => {
+                                            const targetMissions = getGroupedMissions(allMissions).filter(mission => {
+                                                if (!mission.dateStart) return false;
+                                                const d = new Date(mission.dateStart);
+                                                return d.getMonth() === m.month && d.getFullYear() === m.year;
+                                            });
+                                            const count = targetMissions.length;
+                                            const budget = targetMissions.reduce((acc, curr) => {
+                                                const indemnity = (curr.reportData?.manualIndemnity !== undefined && curr.reportData?.manualIndemnity !== null)
+                                                    ? parseFloat(curr.reportData.manualIndemnity)
+                                                    : calculateMissionExpenses(curr.dateStart, curr.dateEnd);
+                                                return acc + indemnity;
+                                            }, 0);
+                                            const depts = targetMissions.reduce((acc, curr) => {
+                                                const ownerId = curr.userId || curr.userIds?.[0];
+                                                const emp = usersDb.find(u => u.id === ownerId);
+                                                const dept = emp?.department || 'AUTRE';
+                                                if (!acc.includes(dept)) acc.push(dept);
+                                                return acc;
+                                            }, []);
+
+                                            const capitalizedLabel = m.label.charAt(0).toUpperCase() + m.label.slice(1);
 
                                             return (
-                                                <div key={dept} className="group">
-                                                    <div className="d-flex justify-content-between align-items-end mb-2">
-                                                        <div>
-                                                            <span className="fw-bold d-block text-dark small" style={{ letterSpacing: '0.3px' }}>{dept}</span>
-                                                            <small className="text-muted" style={{ fontSize: '0.65rem' }}>{Math.round(percentage)}% de l'activité globale</small>
+                                                <tr key={`${m.year}-${m.month}`} style={{ transition: 'background-color 0.2s' }}>
+                                                    <td className="ps-4 py-3">
+                                                        <span className="fw-bold text-dark mb-0 d-block">{capitalizedLabel}</span>
+                                                    </td>
+                                                    <td className="py-3">
+                                                        {count > 0 ? (
+                                                            <span className="badge bg-primary bg-opacity-10 text-primary fw-bold px-3 py-2 rounded-pill">
+                                                                {count} mission{count > 1 ? 's' : ''}
+                                                            </span>
+                                                        ) : (
+                                                            <span className="text-muted small">Aucune mission</span>
+                                                        )}
+                                                    </td>
+                                                    <td className="py-3 fw-bold text-success">
+                                                        {budget > 0 ? `${budget.toLocaleString()} DA` : '0 DA'}
+                                                    </td>
+                                                    <td className="py-3">
+                                                        {depts.length > 0 ? (
+                                                            <div className="d-flex flex-wrap gap-1">
+                                                                {depts.map(d => (
+                                                                    <span key={d} className="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-10 small">
+                                                                        {d}
+                                                                    </span>
+                                                                ))}
+                                                            </div>
+                                                        ) : (
+                                                            <span className="text-muted small">-</span>
+                                                        )}
+                                                    </td>
+                                                    <td className="text-end pe-4 py-3">
+                                                        <div className="d-flex justify-content-end gap-2">
+                                                            <button
+                                                                onClick={() => {
+                                                                    setSelectedMonth({ year: m.year, month: m.month });
+                                                                    setAnalyticsSubTab('dashboard');
+                                                                }}
+                                                                className="btn btn-sm btn-outline-primary d-flex align-items-center gap-1"
+                                                                title="Consulter le Tableau de Bord"
+                                                            >
+                                                                <Eye size={14} /> Consulter
+                                                            </button>
+                                                            <button
+                                                                onClick={() => exportMonthlyExpenses(m)}
+                                                                className="btn btn-sm btn-outline-success d-flex align-items-center gap-1"
+                                                                title="Exporter ce mois en CSV"
+                                                                disabled={count === 0}
+                                                            >
+                                                                <Download size={14} /> Exporter
+                                                            </button>
                                                         </div>
-                                                        <div className="text-end">
-                                                            <span className="h5 fw-bold mb-0" style={{ color: color }}>{count}</span>
-                                                            <small className="text-muted ms-1 small">missions</small>
-                                                        </div>
-                                                    </div>
-                                                    <div className="progress overflow-visible" style={{ height: '10px', backgroundColor: '#f0f2f5', borderRadius: '20px' }}>
-                                                        <div
-                                                            className="progress-bar"
-                                                            style={{
-                                                                width: `${percentage}%`,
-                                                                backgroundColor: color,
-                                                                borderRadius: '20px',
-                                                                boxShadow: `0 4px 12px ${color}44`,
-                                                                transition: 'width 1s cubic-bezier(0.1, 0.5, 0.5, 1.0)'
-                                                            }}
-                                                        ></div>
-                                                    </div>
-                                                </div>
+                                                    </td>
+                                                </tr>
                                             );
                                         })}
-                                        {Object.keys(missionsByDept).length === 0 && (
-                                            <div className="text-center py-5">
-                                                <div className="bg-light rounded-circle p-3 d-inline-block mb-3">
-                                                    <AlertCircle size={32} className="text-muted opacity-50" />
-                                                </div>
-                                                <p className="text-muted fw-medium py-0 mb-0">Aucune donnée pour ce mois-ci.</p>
-                                                <small className="text-muted small">Les statistiques apparaîtront après validation des premières missions.</small>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
-                        <div className="col-md-6">
-                            <div className="card border-0 shadow-sm h-100">
-                                <div className="card-header bg-white py-3">
-                                    <h6 className="mb-0 fw-bold text-success">Indicateurs de Performance</h6>
-                                </div>
-                                <div className="card-body">
-                                    <div className="list-group list-group-flush">
-                                        <div className="list-group-item px-0 py-3 d-flex justify-content-between align-items-center">
-                                            <div>
-                                                <div className="fw-bold">Budget Global Consommé</div>
-                                                <small className="text-muted">Total des budgets estimés pour {currentMonthLabel}</small>
-                                            </div>
-                                            <div className="h4 fw-bold text-success mb-0">{monthlyBudget.toLocaleString()} DA</div>
-                                        </div>
-                                        <div className="list-group-item px-0 py-3 d-flex justify-content-between align-items-center">
-                                            <div>
-                                                <div className="fw-bold">Volume de Sorties</div>
-                                                <small className="text-muted">Nombre total de missions ce mois</small>
-                                            </div>
-                                            <div className="h4 fw-bold text-primary mb-0">{monthlyMissions.length}</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="card border-0 shadow-sm">
-                        <div className="card-header bg-white py-3">
-                            <h6 className="mb-0 fw-bold">Détails des Missions du Mois ({currentMonthLabel})</h6>
-                        </div>
-                        <div className="table-responsive">
-                            <table className="table table-hover align-middle mb-0">
-                                <thead className="table-light">
-                                    <tr>
-                                        <th className="ps-4">Employé</th>
-                                        <th>Destination</th>
-                                        <th>Budget</th>
-                                        <th>Période</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {monthlyMissions.map(m => {
-                                        const ownerId = m.userId || m.userIds?.[0];
-                                        const emp = usersDb.find(u => u.id === ownerId);
-                                        const destinations = m.destinations || [m.destination];
-                                        const indemnity = (m.reportData?.manualIndemnity !== undefined && m.reportData?.manualIndemnity !== null)
-                                            ? parseFloat(m.reportData.manualIndemnity)
-                                            : calculateMissionExpenses(m.dateStart, m.dateEnd);
-                                        return (
-                                            <tr key={m.id}>
-                                                <td className="ps-4">
-                                                    <div className="fw-bold small">{emp?.name}</div>
-                                                    <div className="text-muted small" style={{ fontSize: '0.7rem' }}>{emp?.department}</div>
-                                                </td>
-                                                <td><span className="small">{destinations.join(' • ')}</span></td>
-                                                <td className="fw-bold">{indemnity.toLocaleString()} DA</td>
-                                                <td className="small text-muted">{m.dateStart} - {m.dateEnd}</td>
-                                            </tr>
-                                        );
-
-                                    })}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+                    )}
                 </div>
             )}
             {/* Mission Preview Modal */}

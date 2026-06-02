@@ -2,6 +2,7 @@
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: POST, GET, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type");
+header("Content-Type: application/json; charset=UTF-8");
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
@@ -149,6 +150,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             break;
         case 'save_message':
             $success = updateData('messages.json', $data);
+            // Pruning: Keep only last 1000 messages
+            $messages = json_decode(@file_get_contents($storageDir . 'messages.json'), true);
+            if (is_array($messages) && count($messages) > 1000) {
+                $messages = array_slice($messages, -1000);
+                file_put_contents($storageDir . 'messages.json', json_encode($messages, JSON_PRETTY_PRINT));
+            }
             break;
         case 'delete_message':
             $success = updateData('messages.json', ['id' => $input['id'] ?? $data['id']], 'id', true);
