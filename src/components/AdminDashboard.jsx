@@ -17,7 +17,9 @@ const AdminDashboard = () => {
     const [showUserForm, setShowUserForm] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [editingUserId, setEditingUserId] = useState(null);
-    const [activeTab, setActiveTab] = useState('missions'); // 'missions', 'messages', 'team', 'analytics', 'archive', 'map'
+    const [activeTab, setActiveTab] = useState('missions'); // add new tab option 'employeeStatus'
+    const [selectedEmployeeId, setSelectedEmployeeId] = useState(null);
+    const [dateRange, setDateRange] = useState({ start: '', end: '' });
     const [analyticsSubTab, setAnalyticsSubTab] = useState('dashboard'); // 'dashboard' or 'archive'
 
     // Dynamic Month Selection
@@ -239,9 +241,10 @@ const AdminDashboard = () => {
                 </div>
                 <div className="d-flex gap-2">
                     <button
-                        onClick={() => setActiveTab('team')}
-                        className={`btn btn-outline-dark d-flex align-items-center gap-2 ${activeTab === 'team' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('employeeStatus')}
+                        className={`btn btn-outline-dark d-flex align-items-center gap-2 ${activeTab === 'employeeStatus' ? 'active' : ''}`}
                     >
+                        <UserPlus size={18} /> Missions par Employé
                         <Users size={18} /> Équipe
                     </button>
                     <button
@@ -543,7 +546,82 @@ const AdminDashboard = () => {
             )}
 
             {/* TAB: TEAM (EDIT / DELETE) */}
-            {activeTab === 'team' && (
+            {activeTab === 'employeeStatus' && (
+                <div className="card border-0 shadow-sm animate-fade-in">
+                    <div className="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                        <h5 className="mb-0 fw-bold">Missions par Employé</h5>
+                    </div>
+                    <div className="card-body">
+                        <div className="row mb-4">
+                            <div className="col-md-4">
+                                <label className="form-label small fw-bold">Employé</label>
+                                <select className="form-select" value={selectedEmployeeId || ''} onChange={e => setSelectedEmployeeId(e.target.value)}>
+                                    <option value="">Tous</option>
+                                    {usersDb.map(u => (
+                                        <option key={u.id} value={u.id}>{u.name} ({u.department})</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="col-md-3">
+                                <label className="form-label small fw-bold">Date Début</label>
+                                <input type="date" className="form-control" value={dateRange.start} onChange={e => setDateRange(prev => ({ ...prev, start: e.target.value }))} />
+                            </div>
+                            <div className="col-md-3">
+                                <label className="form-label small fw-bold">Date Fin</label>
+                                <input type="date" className="form-control" value={dateRange.end} onChange={e => setDateRange(prev => ({ ...prev, end: e.target.value }))} />
+                            </div>
+                        </div>
+                        <div className="table-responsive">
+                            <table className="table table-hover align-middle mb-0">
+                                <thead className="table-light">
+                                    <tr>
+                                        <th className="ps-4">Employé</th>
+                                        <th>Destination</th>
+                                        <th>Dates</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {relevantMissions
+                                        .filter(m => {
+                                            if (selectedEmployeeId && (m.userId || m.userIds?.[0]) !== parseInt(selectedEmployeeId)) return false;
+                                            if (dateRange.start) {
+                                                const dStart = new Date(m.dateStart);
+                                                if (dStart < new Date(dateRange.start)) return false;
+                                            }
+                                            if (dateRange.end) {
+                                                const dEnd = new Date(m.dateEnd);
+                                                if (dEnd > new Date(dateRange.end)) return false;
+                                            }
+                                            return true;
+                                        })
+                                        .map(mission => {
+                                            const employee = usersDb.find(u => u.id === (mission.userId || mission.userIds?.[0]));
+                                            return (
+                                                <tr key={mission.id} style={{ cursor: 'pointer' }} onClick={() => setPreviewingMission(mission)}>
+                                                    <td className="ps-4">
+                                                        <div className="d-flex align-items-center gap-2">
+                                                            <div className="bg-light rounded-circle p-1 d-flex align-items-center justify-content-center" style={{ width: 32, height: 32 }}>
+                                                                <span className="fw-bold small text-primary">{employee?.name ? employee.name.charAt(0) : '?'}</span>
+                                                            </div>
+                                                            <div>{employee?.name || 'Inconnu'}</div>
+                                                        </div>
+                                                    </td>
+                                                    <td>{(mission.destinations || [mission.destination]).join(' • ')}</td>
+                                                    <td className="small text-muted">{mission.dateStart} - {mission.dateEnd}</td>
+                                                    <td>
+                                                        <span className={`badge ${mission.status === 'Clôturée' ? 'bg-success' : mission.status === 'Attente Validation RH' ? 'bg-danger' : mission.status === 'Validée' ? 'bg-primary' : mission.status === 'En Attente' ? 'bg-warning text-dark' : 'bg-secondary'}`}>{mission.status}</span>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            )}
+
                 <div className="animate-fade-in">
                     {/* Add/Edit User Toggle Button */}
                     <div className="d-flex justify-content-between align-items-center mb-3">
