@@ -12,6 +12,7 @@ import ExpenseLog from './components/ExpenseLog';
 import Header from './components/Header';
 import Settings from './components/Settings';
 import Login from './components/Login';
+import MissionDetailsPage from './pages/MissionDetailsPage';
 
 function AppContent() {
   const { user, isInitialLoad } = useAppContext();
@@ -62,6 +63,7 @@ function AppContent() {
             <Route path="/clients" element={<ClientList />} />
             <Route path="/expenses" element={<ExpenseLog />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/missions/:missionId" element={<MissionDetailsPage />} />
           </Routes>
         </div>
       </div>

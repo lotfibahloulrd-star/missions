@@ -1,11 +1,5 @@
-import React, { useState } from 'react';
+
 import { Link } from 'react-router-dom';
-import { useAppContext } from '../context/AppContext';
-import { generateMissionOrder } from '../utils/pdfGenerator';
-import MissionReportModal from './MissionReportModal';
-import VisitReportModal from './VisitReportModal';
-import { Calendar, MapPin, Plus, Printer, FileText, Share2, Edit2, Users as UsersIcon, Building, Eye, CheckCircle, XCircle, User, Trash2, DollarSign } from 'lucide-react';
-import MissionPreviewModal from './MissionPreviewModal';
 
 const ShareModal = ({ mission, users, onShare, onClose }) => {
     const [selectedUsers, setSelectedUsers] = useState(mission.sharedWith || []);
@@ -156,13 +150,13 @@ const MissionList = ({ type = 'my' }) => {
 
 
                                         <div className="d-flex gap-2 justify-content-end flex-wrap">
-                                            <button
-                                                onClick={() => setPreviewingMission(mission)}
+                                            <Link
+                                                to={`/missions/${mission.id}`}
                                                 className="btn btn-sm btn-outline-info"
-                                                title="Aperçu rapide"
+                                                title="Voir les détails"
                                             >
                                                 <Eye size={14} />
-                                            </button>
+                                            </Link>
 
                                             {/* Buttons for Active Missions (Validée / Attente RH / Clôturée) */}
                                             {['Validée', 'Attente Validation RH', 'Clôturée'].includes(mission.status) && (
