@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { X, Calendar, MapPin, Users, Building, Info, CheckCircle, XCircle, User, FileText, DollarSign, Edit } from 'lucide-react';
+import { useAppContext } from '../context/AppContext';
 
 
 

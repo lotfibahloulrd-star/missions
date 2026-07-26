@@ -627,6 +627,7 @@ const AdminDashboard = () => {
                 </div>
             )}
 
+            {activeTab === 'users' && (
                 <div className="animate-fade-in">
                     {/* Add/Edit User Toggle Button */}
                     <div className="d-flex justify-content-between align-items-center mb-3">
