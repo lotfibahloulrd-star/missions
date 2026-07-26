@@ -494,9 +494,25 @@ Lien de validation : https://esclab-academy.com/missions/
         });
     };
 
+    // IDs of users who are NOT allowed to validate any mission
+    const BLOCKED_VALIDATORS = [20, 21]; // 20 = Lydia KERSANI, 21 = Hammou BERKAI
+
     const updateMissionStatus = (missionId, newStatus) => {
         const mission = missions.find(m => m.id === missionId);
         if (!mission) return;
+
+        // Guard: blocked users cannot validate
+        if (BLOCKED_VALIDATORS.includes(currentUser.id) && (newStatus === 'Validée' || newStatus === 'Rejetée')) {
+            alert("Vous n'avez pas la permission de valider ou rejeter des missions.");
+            return;
+        }
+
+        // Guard: cannot validate own mission (unless SUPER_ADMIN)
+        const missionOwnerId = mission.userId || mission.userIds?.[0];
+        if (currentUser.role !== 'SUPER_ADMIN' && missionOwnerId === currentUser.id && (newStatus === 'Validée' || newStatus === 'Rejetée')) {
+            alert("Vous ne pouvez pas valider votre propre mission.");
+            return;
+        }
 
         const groupId = mission.groupId;
 

@@ -457,7 +457,7 @@ const AdminDashboard = () => {
                                                         </button>
                                                     )}
 
-                                                    {mission.status === 'En Attente' && (
+                                                    {mission.status === 'En Attente' && ![20, 21].includes(user.id) && (user.role === 'SUPER_ADMIN' || (mission.userId || mission.userIds?.[0]) !== user.id) && (
                                                         <>
                                                             <button
                                                                 onClick={() => updateMissionStatus(mission.id, 'Validée')}
@@ -1253,6 +1253,7 @@ const AdminDashboard = () => {
                     onValidate={updateMissionStatus}
                     onFinalValidate={validateMissionFinal}
                     canFinalValidate={user.role === 'SUPER_ADMIN' || (user.role === 'ADMIN' && user.department === 'RH')}
+                    canValidate={![20, 21].includes(user.id) && (user.role === 'SUPER_ADMIN' || (previewingMission.userId || previewingMission.userIds?.[0]) !== user.id)}
                     onReject={(id) => updateMissionStatus(id, 'Rejetée')}
                     onClose={() => setPreviewingMission(null)}
                     onEditExpenses={(m) => { setSelectedMissionReport(m); setPreviewingMission(null); }}

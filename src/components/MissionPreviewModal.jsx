@@ -1,9 +1,13 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { X, Calendar, MapPin, Users, Building, Info, CheckCircle, XCircle, User, FileText, DollarSign, Edit } from 'lucide-react';
-import { useAppContext } from '../context/AppContext';
 
-const MissionPreviewModal = ({ mission, employee, participants, onValidate, onFinalValidate, canFinalValidate, onReject, onClose, onEditExpenses }) => {
-    const { calculateMissionExpenses, user } = useAppContext();
+
+
+const MissionPreviewModal = ({ mission, employee, participants, onValidate, onFinalValidate, canFinalValidate, canValidate = true, onReject, onClose, onEditExpenses }) => {
+    const { saveMissionReport, user, calculateMissionExpenses } = useAppContext();
+    const [pvData, setPvData] = useState(null); // { name, type, base64 }
+    const [pvError, setPvError] = useState('');
+
     const totalFrais = (mission?.reportData?.manualIndemnity !== undefined && mission?.reportData?.manualIndemnity !== null)
         ? parseFloat(mission.reportData.manualIndemnity)
         : calculateMissionExpenses(mission?.dateStart, mission?.dateEnd);
@@ -14,6 +18,34 @@ const MissionPreviewModal = ({ mission, employee, participants, onValidate, onFi
         window.addEventListener('keydown', handleEsc);
         return () => window.removeEventListener('keydown', handleEsc);
     }, [onClose]);
+
+    const handlePvChange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        if (!['application/pdf', 'image/png', 'image/jpeg'].includes(file.type)) {
+            setPvError('Type de fichier non supporté. PDF, PNG ou JPEG uniquement.');
+            return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+            setPvError('Le fichier dépasse la taille maximale de 5 Mo.');
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = () => {
+            setPvData({ name: file.name, type: file.type, base64: reader.result.split(',')[1] });
+            setPvError('');
+        };
+        reader.readAsDataURL(file);
+    };
+
+    const handlePvSave = () => {
+        if (!pvData) { setPvError('Aucun fichier sélectionné.'); return; }
+        const updatedReport = { ...(mission.reportData || {}), pv: pvData };
+        saveMissionReport(mission.id, updatedReport);
+        onClose();
+    };
+
+
 
     if (!mission) return null;
 
@@ -92,6 +124,21 @@ const MissionPreviewModal = ({ mission, employee, participants, onValidate, onFi
                                 {mission.description || 'Aucune description fournie.'}
                             </div>
                         </div>
+                        {/* PV d'intervention */}
+                        {user && (user.role === 'SUPER_ADMIN' || user.role === 'ADMIN') && (
+                            <div className="col-12 mt-3">
+                                <h6 className="text-muted small text-uppercase fw-bold mb-2">PV d'intervention (PDF ou image, max 5 Mo)</h6>
+                                <input type="file" accept=".pdf,.png,.jpg,.jpeg" onChange={handlePvChange} className="form-control" />
+                                {pvError && <small className="text-danger d-block mt-1">{pvError}</small>}
+                                {pvData && (
+                                    <div className="mt-2 d-flex align-items-center gap-2">
+                                        <FileText size={16} />
+                                        <span>{pvData.name}</span>
+                                        <button className="btn btn-sm btn-primary" onClick={handlePvSave}>Enregistrer PV</button>
+                                    </div>
+                                )}
+                            </div>
+                        )}
 
                         {(user?.role === 'SUPER_ADMIN' || (user?.role === 'ADMIN' && user?.department === 'RH')) && (
                             <div className="col-12 text-center py-3 bg-primary bg-opacity-10 rounded-3 border border-primary border-opacity-10 position-relative">
@@ -135,7 +182,7 @@ const MissionPreviewModal = ({ mission, employee, participants, onValidate, onFi
                     </div>
 
                     <div className="d-flex gap-2 mt-2">
-                        {mission.status === 'En Attente' ? (
+                        {(mission.status === 'En Attente' && canValidate ? (
                             <>
                                 <button
                                     onClick={() => { onValidate(mission.id, 'Validée'); onClose(); }}
