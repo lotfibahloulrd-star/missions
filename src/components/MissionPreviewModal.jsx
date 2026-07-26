@@ -182,41 +182,41 @@ const MissionPreviewModal = ({ mission, employee, participants, onValidate, onFi
                     </div>
 
                     <div className="d-flex gap-2 mt-2">
-                        {(mission.status === 'En Attente' && canValidate ? (
-                            <>
-                                <button
-                                    onClick={() => { onValidate(mission.id, 'Validée'); onClose(); }}
-                                    className="btn btn-success flex-grow-1 d-flex align-items-center justify-content-center gap-2 py-2 fw-bold"
-                                >
-                                    <CheckCircle size={18} /> Valider
-                                </button>
-                                <button
-                                    onClick={() => { onReject(mission.id); onClose(); }}
-                                    className="btn btn-outline-danger flex-grow-1 d-flex align-items-center justify-content-center gap-2 py-2"
-                                >
-                                    <XCircle size={18} /> Rejeter
-                                </button>
-                            </>
-                        ) : mission.status === 'Attente Validation RH' && canFinalValidate ? (
-                            <button
-                                onClick={() => {
-                                    if (mission.visitReport) {
-                                        if (window.confirm("Confirmer la validation finale et la clôture de ce dossier ?")) {
-                                            onFinalValidate(mission.id);
-                                            onClose();
-                                        }
-                                    } else {
-                                        alert("Le dossier est incomplet : Manque Rapport de visite (Compte rendu)");
-                                    }
-                                }}
-                                className={`btn ${mission.visitReport ? 'btn-danger' : 'btn-secondary'} flex-grow-1 d-flex align-items-center justify-content-center gap-2 py-2 fw-bold`}
-                            >
-                                <CheckCircle size={18} /> Clôturer la Mission
-                            </button>
-                        ) : (
-                            <button onClick={onClose} className="btn btn-light border w-100 py-2 fw-bold">Fermer</button>
-                        )}
-                    </div>
+  {mission.status === 'En Attente' && canValidate ? (
+    <>
+      <button
+        onClick={() => { onValidate(mission.id, 'Validée'); onClose(); }}
+        className="btn btn-success flex-grow-1 d-flex align-items-center justify-content-center gap-2 py-2 fw-bold"
+      >
+        <CheckCircle size={18} /> Valider
+      </button>
+      <button
+        onClick={() => { onReject(mission.id); onClose(); }}
+        className="btn btn-outline-danger flex-grow-1 d-flex align-items-center justify-content-center gap-2 py-2"
+      >
+        <XCircle size={18} /> Rejeter
+      </button>
+    </>
+  ) : mission.status === 'Attente Validation RH' && canFinalValidate ? (
+    <button
+      onClick={() => {
+        if (mission.visitReport) {
+          if (window.confirm("Confirmer la validation finale et la clôture de ce dossier ?")) {
+            onFinalValidate(mission.id);
+            onClose();
+          }
+        } else {
+          alert("Le dossier est incomplet : Manque Rapport de visite (Compte rendu)");
+        }
+      }}
+      className={`btn ${mission.visitReport ? 'btn-danger' : 'btn-secondary'} flex-grow-1 d-flex align-items-center justify-content-center gap-2 py-2 fw-bold`}
+    >
+      <CheckCircle size={18} /> Clôturer la Mission
+    </button>
+  ) : (
+    <button onClick={onClose} className="btn btn-light border w-100 py-2 fw-bold">Fermer</button>
+  )}
+</div>
                 </div>
             </div>
         </div>
