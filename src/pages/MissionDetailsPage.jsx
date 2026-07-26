@@ -1,17 +1,18 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
 import MissionPreviewModal from '../components/MissionPreviewModal';
+import MissionReportModal from '../components/MissionReportModal';
 
 /**
  * MissionDetailsPage – Full page view for a mission.
- * Mirrors the UI of MissionPreviewModal but without the backdrop overlay.
- * Allows direct URL access (deep linking) to `/missions/:missionId`.
+ * Mirrors the UI of MissionPreviewModal but respects user role validation rules.
  */
 const MissionDetailsPage = () => {
   const { missionId } = useParams();
   const navigate = useNavigate();
-  const { missions, usersDb, saveMissionReport, calculateMissionExpenses } = useAppContext();
+  const { missions, usersDb, user, updateMissionStatus, validateMissionFinal, saveMissionReport } = useAppContext();
+  const [editingExpensesMission, setEditingExpensesMission] = useState(null);
 
   // Find the mission by ID (numeric comparison)
   const mission = missions.find((m) => Number(m.id) === Number(missionId));
@@ -25,36 +26,58 @@ const MissionDetailsPage = () => {
 
   if (!mission) return null; // Guard while redirecting
 
-  // Resolve employee and participants similar to MissionPreviewModal
+  // Resolve employee and participants
   const employee = usersDb.find((u) => u.id === (mission.userId || mission.userIds?.[0]));
-  const participants = mission.participants || [];
+  const participants = (mission.userIds || [])
+    .filter((id) => id !== (mission.userId || mission.userIds?.[0]))
+    .map((id) => usersDb.find((u) => u.id === id))
+    .filter(Boolean);
 
-  // Handlers passed down – they are defined in context (or can be no‑ops if not available)
-  const onValidate = (id, status) => {
-    if (typeof window.validateMission === 'function') window.validateMission(id, status);
-  };
-  const onReject = (id) => {
-    if (typeof window.rejectMission === 'function') window.rejectMission(id);
-  };
-  const onEditExpenses = (m) => {
-    if (typeof window.editExpenses === 'function') window.editExpenses(m);
-  };
+  // User permission logic for validation:
+  // 1. Users 20 (Lydia) & 21 (Hammou) cannot validate.
+  // 2. Only SUPER_ADMIN, ADMIN, and MANAGER can validate initial missions.
+  // 3. Only SUPER_ADMIN can validate their own mission; others cannot self-validate.
+  const currentUserId = Number(user?.id);
+  const missionOwnerId = Number(mission.userId || mission.userIds?.[0]);
+
+  const canValidate = Boolean(
+    user &&
+      ![20, 21].includes(currentUserId) &&
+      ['SUPER_ADMIN', 'ADMIN', 'MANAGER'].includes(user.role) &&
+      (user.role === 'SUPER_ADMIN' || missionOwnerId !== currentUserId)
+  );
+
+  const canFinalValidate = Boolean(
+    user &&
+      ![20, 21].includes(currentUserId) &&
+      (user.role === 'SUPER_ADMIN' || (user.role === 'ADMIN' && user.department === 'RH'))
+  );
 
   return (
     <div className="container-fluid p-4">
-      {/* Reuse the modal component but hide its backdrop by rendering only its inner content */}
       <MissionPreviewModal
         mission={mission}
         employee={employee}
         participants={participants}
-        onValidate={onValidate}
-        onReject={onReject}
-        canValidate={true}
-        canFinalValidate={true}
-        onEditExpenses={onEditExpenses}
-        // Provide a no‑op onClose that simply navigates back
+        onValidate={updateMissionStatus}
+        onFinalValidate={validateMissionFinal}
+        canValidate={canValidate}
+        canFinalValidate={canFinalValidate}
+        onReject={(id) => updateMissionStatus(id, 'Rejetée')}
+        onEditExpenses={(m) => setEditingExpensesMission(m)}
         onClose={() => navigate(-1)}
       />
+
+      {editingExpensesMission && (
+        <MissionReportModal
+          mission={editingExpensesMission}
+          onClose={() => setEditingExpensesMission(null)}
+          onSave={(reportData) => {
+            saveMissionReport(editingExpensesMission.id, reportData);
+            setEditingExpensesMission(null);
+          }}
+        />
+      )}
     </div>
   );
 };
