@@ -58,8 +58,15 @@ const MissionList = ({ type = 'my' }) => {
     const [previewingMission, setPreviewingMission] = useState(null);
 
     const displayMissions = type === 'my'
-        ? missions.filter(m => m.userId === currentUser?.id || m.userIds?.includes(currentUser?.id) || m.sharedWith?.includes(currentUser?.id))
-        : missions;
+        ? missions.filter(m => currentUser && (m.userId === currentUser.id || m.userIds?.includes(currentUser.id) || m.sharedWith?.includes(currentUser.id)))
+        : (currentUser?.role === 'SUPER_ADMIN'
+            ? missions
+            : missions.filter(m => {
+                const ownerId = m.userId || m.userIds?.[0];
+                const owner = usersDb.find(u => u.id === ownerId);
+                return owner ? owner.department === currentUser?.department : true;
+            })
+          );
     const title = type === 'my' ? 'Mes Missions' : 'Missions Équipe';
     const subtitle = type === 'my' ? 'Suivi détaillé de vos déplacements.' : 'Surveillance des missions de vos collaborateurs.';
 
@@ -374,7 +381,7 @@ const MissionList = ({ type = 'my' }) => {
                     onValidate={updateMissionStatus}
                     onFinalValidate={validateMissionFinal}
                     canFinalValidate={currentUser.role === 'SUPER_ADMIN' || (currentUser.role === 'ADMIN' && currentUser.department === 'RH')}
-                    canValidate={![20, 21].includes(currentUser.id) && (currentUser.role === 'SUPER_ADMIN' || (mission.userId || mission.userIds?.[0]) !== currentUser.id)}
+                    canValidate={Boolean(currentUser && ![20, 21].includes(Number(currentUser.id)) && ['SUPER_ADMIN', 'ADMIN', 'MANAGER'].includes(currentUser.role) && (currentUser.role === 'SUPER_ADMIN' || Number(previewingMission.userId || previewingMission.userIds?.[0]) !== Number(currentUser.id)))}
                     onReject={(id) => updateMissionStatus(id, 'Rejetée')}
                     onClose={() => setPreviewingMission(null)}
                     onEditExpenses={(m) => { setSelectedMission(m); setPreviewingMission(null); }}
