@@ -1,5 +1,12 @@
 
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useAppContext } from '../context/AppContext';
+import { generateMissionOrder } from '../utils/pdfGenerator';
+import MissionReportModal from './MissionReportModal';
+import VisitReportModal from './VisitReportModal';
+import MissionPreviewModal from './MissionPreviewModal';
+import { Calendar, MapPin, Plus, Printer, FileText, Share2, Edit2, Users as UsersIcon, Building, Eye, CheckCircle, XCircle, User, Trash2, DollarSign } from 'lucide-react';
 
 const ShareModal = ({ mission, users, onShare, onClose }) => {
     const [selectedUsers, setSelectedUsers] = useState(mission.sharedWith || []);
