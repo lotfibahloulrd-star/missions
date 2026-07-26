@@ -457,7 +457,7 @@ const AdminDashboard = () => {
                                                         </button>
                                                     )}
 
-                                                    {mission.status === 'En Attente' && ![20, 21].includes(user.id) && (user.role === 'SUPER_ADMIN' || (mission.userId || mission.userIds?.[0]) !== user.id) && (
+                                                    {mission.status === 'En Attente' && ![20, 21].includes(Number(user.id)) && (user.role === 'SUPER_ADMIN' || (mission.userId || mission.userIds?.[0]) !== user.id) && (
                                                         <>
                                                             <button
                                                                 onClick={() => updateMissionStatus(mission.id, 'Validée')}
