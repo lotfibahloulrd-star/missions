@@ -45,12 +45,34 @@ const MissionForm = () => {
     }, [formData.dateStart, formData.dateEnd, calculateMissionExpenses]);
 
 
+    const isSuperAdmin = user?.role === 'SUPER_ADMIN';
+
+    const getTodayDateString = () => {
+        const d = new Date();
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+    const todayStr = getTodayDateString();
+
     const handleSubmit = (e) => {
         e.preventDefault();
 
         // Basic Validation
         if (formData.destinations.length === 0) {
             alert("Veuillez sélectionner au moins une wilaya.");
+            return;
+        }
+
+        // Backdated mission restriction: only SUPER_ADMIN can create/edit past missions
+        if (!isSuperAdmin && formData.dateStart < todayStr) {
+            alert("Seul le Super Administrateur est autorisé à créer ou modifier des ordres de mission antidatés (date de début antérieure à aujourd'hui).");
+            return;
+        }
+
+        if (formData.dateEnd < formData.dateStart) {
+            alert("La date de fin ne peut pas être antérieure à la date de début.");
             return;
         }
 
@@ -208,11 +230,30 @@ const MissionForm = () => {
                                 <div className="row g-3">
                                     <div className="col-md-6">
                                         <label className="form-label fw-semibold small">Date de début</label>
-                                        <input type="date" className="form-control" required value={formData.dateStart} onChange={e => setFormData({ ...formData, dateStart: e.target.value })} />
+                                        <input 
+                                            type="date" 
+                                            className="form-control" 
+                                            required 
+                                            min={isSuperAdmin ? undefined : todayStr}
+                                            value={formData.dateStart} 
+                                            onChange={e => setFormData({ ...formData, dateStart: e.target.value })} 
+                                        />
+                                        {!isSuperAdmin && (
+                                            <small className="text-muted d-block mt-1" style={{ fontSize: '0.7rem' }}>
+                                                * Seul le Super Admin peut saisir une date antérieure à aujourd'hui.
+                                            </small>
+                                        )}
                                     </div>
                                     <div className="col-md-6">
                                         <label className="form-label fw-semibold small">Date de fin</label>
-                                        <input type="date" className="form-control" required value={formData.dateEnd} onChange={e => setFormData({ ...formData, dateEnd: e.target.value })} />
+                                        <input 
+                                            type="date" 
+                                            className="form-control" 
+                                            required 
+                                            min={formData.dateStart || (isSuperAdmin ? undefined : todayStr)}
+                                            value={formData.dateEnd} 
+                                            onChange={e => setFormData({ ...formData, dateEnd: e.target.value })} 
+                                        />
                                     </div>
                                     <div className="col-12">
                                         <label className="form-label fw-semibold small">Moyen de Transport</label>

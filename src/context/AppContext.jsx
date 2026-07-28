@@ -422,8 +422,22 @@ export const AppProvider = ({ children }) => {
         });
     };
 
+    const getTodayDateString = () => {
+        const d = new Date();
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+
     const addMission = (missionData) => {
         if (!currentUser) return;
+
+        const todayStr = getTodayDateString();
+        if (currentUser.role !== 'SUPER_ADMIN' && missionData.dateStart < todayStr) {
+            alert("Seul le Super Administrateur est autorisé à créer des ordres de mission antidatés.");
+            return;
+        }
 
         const baseId = Date.now();
         const participants = missionData.userIds || [currentUser.id];
@@ -630,6 +644,12 @@ Lien de validation : https://esclab-academy.com/missions/
     };
 
     const updateMission = (missionId, updatedData) => {
+        const todayStr = getTodayDateString();
+        if (currentUser?.role !== 'SUPER_ADMIN' && updatedData.dateStart && updatedData.dateStart < todayStr) {
+            alert("Seul le Super Administrateur est autorisé à modifier des ordres de mission antidatés.");
+            return;
+        }
+
         setMissions(prevMissions => {
             const originalMission = prevMissions.find(m => m.id === missionId);
             if (!originalMission) return prevMissions;
