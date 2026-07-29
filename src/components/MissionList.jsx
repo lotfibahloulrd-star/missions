@@ -224,7 +224,7 @@ const MissionList = ({ type = 'my' }) => {
                                             )}
 
                                             {/* Edit Button */}
-                                            {mission.status === 'En Attente' && (mission.userId === currentUser?.id || ['SUPER_ADMIN', 'ADMIN'].includes(currentUser?.role)) && (
+                                            {mission.status === 'En Attente' && (mission.userId === currentUser?.id || ['SUPER_ADMIN', 'ADMIN'].includes(currentUser?.role)) && (currentUser?.role === 'SUPER_ADMIN' || !mission.dateStart || new Date(mission.dateStart) >= new Date()) && (
                                                 <Link
                                                     to={`/new-mission?edit=${mission.id}`}
                                                     className="btn btn-sm btn-outline-warning text-dark"
