@@ -124,11 +124,13 @@ const AdminDashboard = () => {
     const todayStr = new Date().toISOString().split('T')[0];
     const relevantMissions = (isSuperAdmin
         ? getGroupedMissions(allMissions)
-        : getGroupedMissions(allMissions.filter(m => {
-            const ownerId = m.userId || m.userIds?.[0];
-            const missionUser = usersDb.find(u => u.id === ownerId);
-            return missionUser?.department === user.department;
-        }))).filter(m => m.dateStart >= todayStr);
+        : getGroupedMissions(
+            allMissions.filter(m => {
+                const ownerId = m.userId || m.userIds?.[0];
+                const missionUser = usersDb.find(u => u.id === ownerId);
+                return missionUser?.department === user.department;
+            })
+        ));
 
     const relevantUsers = isSuperAdmin
         ? usersDb
@@ -339,7 +341,7 @@ const AdminDashboard = () => {
                                 <Archive className="me-2" size={20} />
                                 <span className="fw-bold small text-uppercase">Missions Clôturées</span>
                             </div>
-                            <h3 className="fw-bold mb-0">{relevantMissions.filter(m => m.status === 'Clôturée').length}</h3>
+                            <h3 className="fw-bold mb-0">{allMissions.filter(m => m.status === 'Clôturée').length}</h3>
                             <small className="text-white-50">Voir l'historique</small>
                         </div>
                     </div>
@@ -851,7 +853,7 @@ const AdminDashboard = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {relevantMissions.filter(m => m.status === 'Clôturée').map(mission => {
+                                {allMissions.filter(m => m.status === 'Clôturée').map(mission => {
                                     const ownerId = mission.userId || mission.userIds?.[0];
                                     const employee = usersDb.find(u => u.id === ownerId);
                                     const destinations = mission.destinations || [mission.destination];
