@@ -434,8 +434,8 @@ export const AppProvider = ({ children }) => {
         if (!currentUser) return;
 
         const todayStr = getTodayDateString();
-        if (currentUser.role !== 'SUPER_ADMIN' && missionData.dateStart < todayStr) {
-            alert("Seul le Super Administrateur est autorisé à créer des ordres de mission antidatés.");
+        if (missionData.dateStart < todayStr) {
+            alert("Les missions ne peuvent pas être créées avec une date antérieure à aujourd’hui.");
             return;
         }
 
