@@ -169,7 +169,7 @@ const AdminDashboard = () => {
         setIsEditing(true);
         setEditingUserId(user.id);
         setShowUserForm(true);
-        setActiveTab('team');
+        setActiveTab('users');
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
@@ -295,7 +295,7 @@ const AdminDashboard = () => {
             {/* KPI ADMIN */}
             <div className="row g-4 mb-4">
                 <div className="col-md-3">
-                    <div className="card border-0 shadow-sm h-100 cursor-pointer" onClick={() => setActiveTab('team')}>
+                    <div className="card border-0 shadow-sm h-100 cursor-pointer" onClick={() => setActiveTab('users')}>
                         <div className="card-body">
                             <div className="d-flex align-items-center mb-2 text-primary">
                                 <Users className="me-2" size={20} />
