@@ -646,7 +646,7 @@ Lien de validation : https://esclab-academy.com/missions/
     const updateMission = (missionId, updatedData) => {
         const todayStr = getTodayDateString();
         if (currentUser?.role !== 'SUPER_ADMIN' && updatedData.dateStart && updatedData.dateStart < todayStr) {
-            alert("Seul le Super Administrateur est autorisé à modifier des ordres de mission antidatés.");
+            alert("Les missions ne peuvent pas être créées avec une date antérieure à aujourd’hui.");
             return;
         }
 
