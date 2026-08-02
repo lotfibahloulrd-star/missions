@@ -121,13 +121,14 @@ const AdminDashboard = () => {
     const isBoss = user.role === 'SUPER_ADMIN' || user.department === 'RH'; // used for analytics tab
     const isPrivileged = ['ADMIN', 'MANAGER'].includes(user.role); // limited view for admins/managers
 
-    const relevantMissions = isSuperAdmin
+    const todayStr = new Date().toISOString().split('T')[0];
+    const relevantMissions = (isSuperAdmin
         ? getGroupedMissions(allMissions)
         : getGroupedMissions(allMissions.filter(m => {
             const ownerId = m.userId || m.userIds?.[0];
             const missionUser = usersDb.find(u => u.id === ownerId);
             return missionUser?.department === user.department;
-        }));
+        }))).filter(m => m.dateStart >= todayStr);
 
     const relevantUsers = isSuperAdmin
         ? usersDb
