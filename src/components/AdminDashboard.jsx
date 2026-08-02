@@ -247,8 +247,8 @@ const AdminDashboard = () => {
                         <UserPlus size={18} /> Missions par Employé
                     </button>
                     <button
-                        onClick={() => setActiveTab('team')}
-                        className={`btn btn-outline-dark d-flex align-items-center gap-2 ${activeTab === 'team' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('users')}
+                        className={`btn btn-outline-dark d-flex align-items-center gap-2 ${activeTab === 'users' ? 'active' : ''}`}
                     >
                         <Users size={18} /> Équipe
                     </button>
